@@ -320,3 +320,22 @@ def save_combined(
     print(f"Saved -> {out_path}")
     return out_path
 
+
+# --- CLI Test ---
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Ingest fake-news datasets.")
+    parser.add_argument("--mode", choices=["drive", "local", "auto"], default="auto")
+    parser.add_argument("--data-dir", default=None, help="Base directory for CSVs")
+    parser.add_argument("--save", action="store_true", help="Save combined CSV")
+    args = parser.parse_args()
+
+    df = load_all_datasets(mode=args.mode, local_dir=args.data_dir)
+    print("\nFirst 5 rows:")
+    print(df.head(5).to_string())
+
+    if args.save:
+        save_combined(df, mode=args.mode, local_dir=args.data_dir)
+
