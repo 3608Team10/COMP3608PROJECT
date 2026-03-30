@@ -132,5 +132,92 @@ def find_file(directory: Path, filename: str) -> Path | None:
     return None
 
 
+# --- Dataset Loaders ---
+
+def load_bhavik(data_dir: Path) -> pd.DataFrame:
+    # fake.csv -> label = 0, true.csv -> label = 1
+    
+    src_dir = data_dir / BHAVIK_DIR
+    frames = []
+
+    for fname, lbl in [("fake.csv", 0), ("true.csv", 1)]:
+        path = find_file(src_dir, fname)
+        if path is None:
+            print(f"[bhavik] WARNING: '{BHAVIK_DIR}/{fname}' not found - skipping.")
+            continue
+        df = read_csv_safe(path)
+        df = df[["title", "text"]].copy()
+        df["label"] = lbl
+        df["source_dataset"] = "bhavikjikadara"
+        frames.append(df)
+        print(f"[bhavik] Loaded '{fname}': {len(df):,} rows (label={lbl})")
+
+    if not frames:
+        return pd.DataFrame(columns=["title", "text", "label", "source_dataset"])
+    return pd.concat(frames, ignore_index=True)
+
+
+def load_mahdi(data_dir: Path) -> pd.DataFrame:
+    # 'label' column: 'fake' -> 0, 'real' -> 1
+    
+    fname = "fake_news_dataset.csv"
+    path = find_file(data_dir / MAHDI_DIR, fname)
+
+    if path is None:
+        print(f"[mahdi] WARNING: '{MAHDI_DIR}/{fname}' not found - skipping.")
+        return pd.DataFrame(columns=["title", "text", "label", "source_dataset"])
+
+    df = read_csv_safe(path)
+
+    df["label"] = (
+        df["label"]
+        .astype(str).str.strip().str.lower()
+        .map({"fake": 0, "real": 1, "0": 0, "1": 1})
+    )
+    unmapped = df["label"].isna().sum()
+    if unmapped:
+        print(f"[mahdi] WARNING: {unmapped} rows had unrecognised labels - dropped.")
+        df = df.dropna(subset=["label"])
+
+    df["label"] = df["label"].astype(int)
+    df = df[["title", "text", "label"]].copy()
+    df["source_dataset"] = "mahdimashayekhi"
+    print(f"[mahdi] Loaded '{fname}': {len(df):,} rows")
+    return df
+
+
+def load_shawky(data_dir: Path) -> pd.DataFrame:
+    # fake.csv -> label = 0, real.csv -> label = 1
+    # Column 'tweet' is mapped to 'text'; title is set to ''.
+    
+    src_dir = data_dir / SHAWKY_DIR
+    frames = []
+
+    for fname, lbl in [("fake.csv", 0), ("real.csv", 1)]:
+        path = find_file(src_dir, fname)
+        if path is None:
+            print(f"  [shawky] WARNING: '{SHAWKY_DIR}/{fname}' not found - skipping.")
+            continue
+        df = read_csv_safe(path)
+
+        # Map whichever column holds the text
+        if "tweet" in df.columns:
+            df = df[["tweet"]].rename(columns={"tweet": "text"})
+        elif "text" in df.columns:
+            df = df[["text"]].copy()
+        else:
+            df = df.iloc[:, [0]].copy()
+            df.columns = ["text"]
+
+        df["title"] = ""
+        df["label"] = lbl
+        df["source_dataset"] = "shawkyelgendy"
+        frames.append(df)
+        print(f"[shawky] Loaded '{fname}': {len(df):,} rows (label={lbl})")
+
+    if not frames:
+        return pd.DataFrame(columns=["title", "text", "label", "source_dataset"])
+    return pd.concat(frames, ignore_index=True)
+
 
 
