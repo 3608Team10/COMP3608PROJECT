@@ -305,3 +305,18 @@ def load_all_datasets(
     return combined
 
 
+# --- Data Persistence ---
+
+def save_combined(
+    df: pd.DataFrame,
+    filename: str = "merged_fake_news.csv",
+    mode: str = "auto",
+    local_dir=None,
+) -> Path:
+    # Save the combined DataFrame to CSV inside the data directory
+    data_dir = resolve_data_dir(mode, local_dir)
+    out_path = data_dir / filename
+    df.to_csv(out_path, index=False)
+    print(f"Saved -> {out_path}")
+    return out_path
+
