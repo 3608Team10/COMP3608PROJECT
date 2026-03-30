@@ -48,7 +48,7 @@ drive.flush_and_unmount()
 Change directory to your project folder
 
 ```py
-%cd /content/drive/MyDrive/<project-folder>
+%cd /content/drive/MyDrive/project
 ```
 
 Clone the repository
@@ -60,7 +60,7 @@ Clone the repository
 Now change your directory to the local repository folder
 
 ```py
-%cd /content/drive/MyDrive/<project-folder>/COMP3608PROJECT
+%cd /content/drive/MyDrive/project/COMP3608PROJECT
 ```
 
 Before we have the ability to push to github you need to create a token
@@ -123,11 +123,5 @@ Git pull command
 
 ```
 !git pull origin <branch-name> 
-```
-
-Git pull rebase command
-
-```
-!git pull -- rebase
 ```
 
