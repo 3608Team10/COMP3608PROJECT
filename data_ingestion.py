@@ -71,4 +71,66 @@ MAHDI_DIR = "mahdimashayekhi"
 SHAWKY_DIR = "shawkyelgendy"
 
 
+# --- Helper Functions ---
+
+def resolve_data_dir(mode: str, local_dir) -> Path:
+    # Return the root data directory (the one containing the three sub-folders) 
+    if mode == "drive":
+        data_dir = DRIVE_ROOT / DATA_SUBDIR
+        if not data_dir.exists():
+            scaffold_data_dir(data_dir)
+            raise FileNotFoundError(
+                f"Data directory scaffolded at:\n{data_dir}\n"
+                "Please upload your CSVs into the sub-folders shown and re-run."
+            )
+        return data_dir
+
+    if mode == "local":
+        base = Path(local_dir) if local_dir else Path(__file__).parent
+        data_dir = base / DATA_SUBDIR
+        # Also accept passing the data dir itself directly
+        if not data_dir.exists():
+            data_dir = base
+        return data_dir
+
+    if mode == "auto":
+        drive_dir = DRIVE_ROOT / DATA_SUBDIR
+        if drive_dir.exists():
+            return drive_dir
+        # Fall back to a 'data/' folder next to this script, or the script dir
+        script_dir = Path(__file__).parent if "__file__" in globals() else Path(".")
+        local_data = script_dir / DATA_SUBDIR
+        return local_data if local_data.exists() else script_dir
+
+    raise ValueError(f"Unknown mode '{mode}'. Use 'drive', 'local', or 'auto'.")
+
+
+def scaffold_data_dir(data_dir: Path):
+    # Create the expected sub-folder structure so the user knows where to put files
+    for sub in (BHAVIK_DIR, MAHDI_DIR, SHAWKY_DIR):
+        (data_dir / sub).mkdir(parents=True, exist_ok=True)
+    print(f"Created folder structure under: {data_dir}")
+
+
+def read_csv_safe(path: Path, **kwargs) -> pd.DataFrame:
+    # Read a CSV with common encoding fallbacks
+    for enc in ("utf-8", "latin-1", "cp1252"):
+        try:
+            return pd.read_csv(path, encoding=enc, **kwargs)
+        except UnicodeDecodeError:
+            continue
+    raise UnicodeDecodeError(f"Could not decode {path} with any supported encoding.")
+
+
+def find_file(directory: Path, filename: str) -> Path | None:
+    # Case-insensitive file lookup inside a directory
+    if not directory.exists():
+        return None
+    for f in directory.iterdir():
+        if f.is_file() and f.name.lower() == filename.lower():
+            return f
+    return None
+
+
+
 
