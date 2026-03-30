@@ -196,7 +196,7 @@ def load_shawky(data_dir: Path) -> pd.DataFrame:
     for fname, lbl in [("fake.csv", 0), ("real.csv", 1)]:
         path = find_file(src_dir, fname)
         if path is None:
-            print(f"  [shawky] WARNING: '{SHAWKY_DIR}/{fname}' not found - skipping.")
+            print(f"[shawky] WARNING: '{SHAWKY_DIR}/{fname}' not found - skipping.")
             continue
         df = read_csv_safe(path)
 
@@ -219,5 +219,89 @@ def load_shawky(data_dir: Path) -> pd.DataFrame:
         return pd.DataFrame(columns=["title", "text", "label", "source_dataset"])
     return pd.concat(frames, ignore_index=True)
 
+
+# --- Main Loader ---
+
+"""
+Load and combine all three fake-news datasets into one DataFrame.
+
+Parameters:
+
+mode : str
+    'drive' - read from mounted Google Drive
+    'local' - read from local_dir/data/
+    'auto' - try Drive first, fall back to local (default)
+local_dir : str | Path | None
+    Base path when mode='local'. Defaults to the script's directory.
+drop_duplicates : bool
+    Remove exact duplicate (text, label) pairs.  Default True.
+drop_na_text : bool
+    Drop rows where 'text' is NaN or empty.  Default True.
+
+Returns:
+
+pd.DataFrame with columns:
+    title          - article/tweet title ('' for tweet-only rows)
+    text           - main text content
+    label          - 0 = fake, 1 = real
+    source_dataset - origin dataset name
+"""
+def load_all_datasets(
+    mode: str = "auto",
+    local_dir=None,
+    drop_duplicates: bool = True,
+    drop_na_text: bool = True,
+) -> pd.DataFrame:
+    print("-" * 60)
+    print("  Fake News Dataset Ingestion")
+    print("-" * 60)
+
+    data_dir = resolve_data_dir(mode, local_dir)
+    print(f"\nData directory : {data_dir}")
+    print(f"Sub-folders: {BHAVIK_DIR}/  {MAHDI_DIR}/  {SHAWKY_DIR}/\n")
+
+    print("Loading bhavikjikadara ...")
+    df_bhavik = load_bhavik(data_dir)
+
+    print("\nLoading mahdimashayekhi ...")
+    df_mahdi = load_mahdi(data_dir)
+
+    print("\nLoading shawkyelgendy ...")
+    df_shawky = load_shawky(data_dir)
+
+    # Combine
+    combined = pd.concat([df_bhavik, df_mahdi, df_shawky], ignore_index=True)
+    combined = combined[["title", "text", "label", "source_dataset"]]
+
+    # Basic cleaning
+    if drop_na_text:
+        before = len(combined)
+        combined = combined[combined["text"].notna() & (combined["text"].str.strip() != "")]
+        dropped = before - len(combined)
+        if dropped:
+            print(f"\nDropped {dropped:,} rows with empty/null text.")
+
+    if drop_duplicates:
+        before = len(combined)
+        combined = combined.drop_duplicates(subset=["text", "label"])
+        dropped = before - len(combined)
+        if dropped:
+            print(f"Dropped {dropped:,} duplicate rows.")
+
+    combined = combined.reset_index(drop=True)
+
+    # Summary
+    print("\n" + "-" * 60)
+    print("Combined Dataset Summary")
+    print("-" * 60)
+    print(f"Total rows: {len(combined):,}")
+    print(f"Fake (0): {(combined['label'] == 0).sum():,}")
+    print(f"Real (1): {(combined['label'] == 1).sum():,}")
+    print(f"\nRows per source:")
+    for src, count in combined["source_dataset"].value_counts().items():
+        print(f"{src:<22} {count:,}")
+    print("-" * 60)
+
+    return combined
 
 
