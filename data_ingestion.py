@@ -158,30 +158,38 @@ def colab_secret(key: str):
 
 """
 Resolve Kaggle credentials in priority order:
-    1. Google Colab Secrets — KAGGLE_TOKEN (API token)
-    2. Google Colab Secrets — KAGGLE_USERNAME + KAGGLE_KEY (legacy) 
-    3. Environment variable — KAGGLE_TOKEN (full JSON string)
-    4. Environment variables — KAGGLE_USERNAME + KAGGLE_KEY (legacy)
-    5. ~/.kaggle/kaggle.json file (auto-detected by kagglehub)
-    
+    1. Google Colab Secrets — KAGGLE_API_TOKEN (new OAuth token)
+    2. Google Colab Secrets — KAGGLE_TOKEN (legacy JSON token)
+    3. Google Colab Secrets — KAGGLE_USERNAME + KAGGLE_KEY (legacy)
+    4. Environment variable — KAGGLE_API_TOKEN (new OAuth token)
+    5. Environment variable — KAGGLE_TOKEN (legacy JSON token)
+    6. Environment variables — KAGGLE_USERNAME + KAGGLE_KEY (legacy)
+    7. ~/.kaggle/kaggle.json file (auto-detected by kagglehub)
 """
 def setup_kaggle_credentials():
     # Case: Already set in environment so do nothing
     if (Path.home() / ".kaggle" / "kaggle.json").exists():
         return
     
-    # Case 1 & 3: KAGGLE_TOKEN
+    # Case 1 & 4: KAGGLE_API_TOKEN
+    api_token = colab_secret("KAGGLE_API_TOKEN") or os.environ.get("KAGGLE_API_TOKEN")
+    if api_token:
+        os.environ["KAGGLE_API_TOKEN"] = api_token.strip()
+        print("Kaggle credentials set from KAGGLE_API_TOKEN (new OAuth token format).")
+        return
+    
+    # Case 2 & 5: KAGGLE_TOKEN — legacy JSON token {"username": "...", "key": "..."}
     token_json = colab_secret("KAGGLE_TOKEN") or os.environ.get("KAGGLE_TOKEN")
     if token_json:
         try:
-            token_data = json.loads(token_json)
+            token_data = json.loads(token_json.strip())
             write_kaggle_json(token_data)
-            print("Kaggle credentials written from KAGGLE_TOKEN.")
+            print("Kaggle credentials written from KAGGLE_TOKEN (JSON format).")
             return
         except json.JSONDecodeError:
-            pass # fall through to next option
+            pass  # not valid JSON; fall through
     
-    # Case 2 & 4: Legacy KAGGLE_USERNAME + KAGGLE_KEY
+    # Case 3 & 6: Legacy KAGGLE_USERNAME + KAGGLE_KEY
     username = colab_secret("KAGGLE_USERNAME") or os.environ.get("KAGGLE_USERNAME")
     key = colab_secret("KAGGLE_KEY") or os.environ.get("KAGGLE_KEY")
     if username and key:
@@ -189,14 +197,16 @@ def setup_kaggle_credentials():
         print("Kaggle credentials written from KAGGLE_USERNAME / KAGGLE_KEY.")
         return
     
-    # Case 5: Nothing found; kagglehub will raise a clear error on its own
+    # Case 7: Nothing found; kagglehub will raise a clear error on its own
     raise EnvironmentError(
         "Kaggle credentials not found. Provide them via one of:\n"
-        "   a) Colab Secret  : KAGGLE_TOKEN (paste the full JSON from kaggle.com/settings)\n"
-        "   b) Colab Secrets : KAGGLE_USERNAME + KAGGLE_KEY (legacy API key)\n"
-        "   c) Env variable  : KAGGLE_TOKEN\n"
-        "   d) Env variables : KAGGLE_USERNAME + KAGGLE_KEY\n"
-        "   e) File          : ~/.kaggle/kaggle.json\n\n"
+        "   a) Colab Secret  : KAGGLE_API_TOKEN (new OAuth token from kaggle.com/settings)\n"
+        "   b) Colab Secret  : KAGGLE_TOKEN (legacy JSON token)\n"
+        "   c) Colab Secrets : KAGGLE_USERNAME + KAGGLE_KEY (legacy API key)\n"
+        "   d) Env variable  : KAGGLE_API_TOKEN\n"
+        "   e) Env variable  : KAGGLE_TOKEN\n"
+        "   f) Env variables : KAGGLE_USERNAME + KAGGLE_KEY\n"
+        "   g) File          : ~/.kaggle/kaggle.json\n\n"
         "To get a new token: kaggle.com → Settings → API → Create New Token"
     )
 
