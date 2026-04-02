@@ -2,6 +2,14 @@
 
 ## How to Run
 
+### Prerequisites
+
+- Google Drive Account
+- Kaggle Account
+- data_ingestion.py (Download data_ingestion.py and upload to your Google Colab environment)
+
+### Colab Notebooks
+
 Bagging 
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github.com/3608Team10/COMP3608PROJECT/blob/main/Bagging.ipynb)
@@ -14,7 +22,21 @@ Stacking
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github.com/3608Team10/COMP3608PROJECT/blob/main/Stacking.ipynb)
 
-## Colab Workflow
+### Colab Secrets
+
+Before you can start working in the notebooks above you need to get your kaggle api key. <br>
+The data ingestion script supports Kaggle API Tokens and Kaggle Legacy Keys. <br>
+Place the actual values in the value field. <br>
+
+For the new api token:
+
+<img src="images/colab-secrets-kaggle-token.png" alt="Colab Secrets - Kaggle (Token)" height="350" width="500"/> <br>
+
+For the legacy api key:
+
+<img src="images/colab-secrets-kaggle-legacy.png" alt="Colab Secrets - Kaggle (Key)" height="350" width="500"/> <br>
+
+## Colab Workflow (Developers)
 
 ### Google Drive Structure
 
@@ -83,7 +105,7 @@ Before we have the ability to push to github you need to create a token
 
 Now use colab secrets (key icon) and add the following (place the actual values in the value column):
 
-<img src="images/colab-secrets-github.png" alt="Colab Secrets (Github)" height="350" width="350"/> <br>
+<img src="images/colab-secrets-github.png" alt="Colab Secrets - Github" height="350" width="350"/> <br>
 
 ```py
 from google.colab import userdata
