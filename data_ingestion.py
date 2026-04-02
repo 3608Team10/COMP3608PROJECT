@@ -5,19 +5,22 @@ Combines 3 Kaggle datasets into a single unified DataFrame
 
 Datasets:
 1. bhavikjikadara
+    - https://www.kaggle.com/datasets/bhavikjikadara/fake-news-detection
     - fake.csv
     - true.csv
     - (title, text, subject, date)
 2. mahdimashayekhi
+    - https://www.kaggle.com/datasets/mahdimashayekhi/fake-news-detection-dataset
     - fake_news_dataset.csv
     - (title, text, data, source, author, category, label)
 3. shawkyelgendy
+    - https://www.kaggle.com/datasets/shawkyelgendy/fake-news-football
     - fake.csv
     - real.csv
     - (tweet)
 
 
-Expected folder structure under your data directory:
+Data folder structure (auto-created on download):
 data/
 ├── bhavikjikadara/
 │   ├── fake.csv
@@ -48,14 +51,21 @@ from data_ingestion import load_all_datasets
 df = load_all_datasets()
 
 
+Kaggle API key setup:
+1. Google Colab Secrets: add KAGGLE_USERNAME and KAGGLE_KEY as secrets.
+2. Environment variables: set KAGGLE_USERNAME and KAGGLE_KEY.
+3. kaggle.json file at ~/.kaggle/kaggle.json.
+
+
 df columns: title | text | label | source_dataset
 """
 
 
 import os
 import warnings
+import zipfile
 from pathlib import Path
-
+from google.colab import userdata
 import pandas as pd
 
 warnings.filterwarnings("ignore")
@@ -69,6 +79,53 @@ DATA_SUBDIR = "data"
 BHAVIK_DIR = "bhavikjikadara"
 MAHDI_DIR = "mahdimashayekhi"
 SHAWKY_DIR = "shawkyelgendy"
+
+# Kaggle dataset slugs (owner/dataset-name)
+KAGGLE_DATASETS = {
+    BHAVIK_DIR: "bhavikjikadara/fake-news-detection",
+    MAHDI_DIR: "mahdimashayekhi/fake-news-detection-dataset",
+    SHAWKY_DIR: "shawkyelgendy/fake-news-football"
+}
+
+
+# --- Kaggle Authentication & Download ---
+
+"""
+Resolve Kaggle credentials in priority order:
+    1. Google Colab Secrets (KAGGLE_USERNAME / KAGGLE_KEY)
+    2. Environment variables (KAGGLE_USERNAME / KAGGLE_KEY)
+    3. kaggle.json file at ~/.kaggle/kaggle.json (kaggle library automatically detects this)
+    
+"""
+def setup_kaggle_credentials():
+    # Case: Already set in environment so do nothing
+    if os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY"):
+        return
+    
+    # Case: Google Colab secrets
+    try:
+        username = userdata.get("KAGGLE_USERNAME")
+        key = userdata.get("KAGGLE_KEY")
+        if username and key:
+            os.environ["KAGGLE_USERNAME"] = username
+            os.environ["KAGGLE_KEY"] = key
+            print("Kaggle credentials loaded from Colab secrets.")
+            return
+    except Exception:
+        pass
+    
+    # Case: kaggle.json file on disk (kaggle library handles this automatically)
+    kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
+    if kaggle_json.exists():
+        print("Kaggle credentials loaded from ~/.kaggle/kaggle.json.")
+        return
+    
+    raise EnvironmentError(
+        "Kaggle credentials not found. Provide them via:\n"
+        "   a) Google Colab Secrets: KAGGLE_USERNAME and KAGGLE_KEY\n"
+        "   b) Environment variables: KAGGLE_USERNAME and KAGGLE_KEY\n"
+        "   c) ~/.kaggle/kaggle.json"
+    )
 
 
 # --- Helper Functions ---
