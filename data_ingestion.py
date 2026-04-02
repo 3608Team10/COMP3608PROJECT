@@ -57,7 +57,7 @@ Kaggle API key setup:
 3. kaggle.json file at ~/.kaggle/kaggle.json.
 
 
-df columns: title | text | label | source_dataset
+df columns: title | text | label | category | source_dataset
 """
 
 
@@ -188,18 +188,12 @@ def resolve_data_dir(mode: str, local_dir) -> Path:
     # Return the root data directory (the one containing the three sub-folders) 
     if mode == "drive":
         data_dir = DRIVE_ROOT / DATA_SUBDIR
-        if not data_dir.exists():
-            scaffold_data_dir(data_dir)
-            raise FileNotFoundError(
-                f"Data directory scaffolded at:\n{data_dir}\n"
-                "Please upload your CSVs into the sub-folders shown and re-run."
-            )
+        data_dir.mkdir(parents=True, exist_ok=True)
         return data_dir
 
     if mode == "local":
         base = Path(local_dir) if local_dir else Path(__file__).parent
         data_dir = base / DATA_SUBDIR
-        # Also accept passing the data dir itself directly
         if not data_dir.exists():
             data_dir = base
         return data_dir
@@ -208,19 +202,11 @@ def resolve_data_dir(mode: str, local_dir) -> Path:
         drive_dir = DRIVE_ROOT / DATA_SUBDIR
         if drive_dir.exists():
             return drive_dir
-        # Fall back to a 'data/' folder next to this script, or the script dir
         script_dir = Path(__file__).parent if "__file__" in globals() else Path(".")
         local_data = script_dir / DATA_SUBDIR
         return local_data if local_data.exists() else script_dir
 
     raise ValueError(f"Unknown mode '{mode}'. Use 'drive', 'local', or 'auto'.")
-
-
-def scaffold_data_dir(data_dir: Path):
-    # Create the expected sub-folder structure so the user knows where to put files
-    for sub in (BHAVIK_DIR, MAHDI_DIR, SHAWKY_DIR):
-        (data_dir / sub).mkdir(parents=True, exist_ok=True)
-    print(f"Created folder structure under: {data_dir}")
 
 
 def read_csv_safe(path: Path, **kwargs) -> pd.DataFrame:
@@ -257,14 +243,21 @@ def load_bhavik(data_dir: Path) -> pd.DataFrame:
             print(f"[bhavik] WARNING: '{BHAVIK_DIR}/{fname}' not found - skipping.")
             continue
         df = read_csv_safe(path)
-        df = df[["title", "text"]].copy()
+        
+        cols = {"title": "", "text": "", "subject": "Unknown"}
+        for col, default in cols.items():
+            if col not in df.columns:
+                df[col] = default
+        
+        df = df[["title", "text", "subject"]].copy()
+        df = df.rename(columns={"subject": "category"})
         df["label"] = lbl
         df["source_dataset"] = "bhavikjikadara"
         frames.append(df)
         print(f"[bhavik] Loaded '{fname}': {len(df):,} rows (label={lbl})")
 
     if not frames:
-        return pd.DataFrame(columns=["title", "text", "label", "source_dataset"])
+        return pd.DataFrame(columns=["title", "text", "label", "category", "source_dataset"])
     return pd.concat(frames, ignore_index=True)
 
 
@@ -276,7 +269,7 @@ def load_mahdi(data_dir: Path) -> pd.DataFrame:
 
     if path is None:
         print(f"[mahdi] WARNING: '{MAHDI_DIR}/{fname}' not found - skipping.")
-        return pd.DataFrame(columns=["title", "text", "label", "source_dataset"])
+        return pd.DataFrame(columns=["title", "text", "label", "category", "source_dataset"])
 
     df = read_csv_safe(path)
 
@@ -291,7 +284,11 @@ def load_mahdi(data_dir: Path) -> pd.DataFrame:
         df = df.dropna(subset=["label"])
 
     df["label"] = df["label"].astype(int)
-    df = df[["title", "text", "label"]].copy()
+    
+    if "category" not in df.columns:
+        df["category"] = "Unknown"
+    
+    df = df[["title", "text", "label", "category"]].copy()
     df["source_dataset"] = "mahdimashayekhi"
     print(f"[mahdi] Loaded '{fname}': {len(df):,} rows")
     return df
@@ -311,7 +308,6 @@ def load_shawky(data_dir: Path) -> pd.DataFrame:
             continue
         df = read_csv_safe(path)
 
-        # Map whichever column holds the text
         if "tweet" in df.columns:
             df = df[["tweet"]].rename(columns={"tweet": "text"})
         elif "text" in df.columns:
@@ -322,19 +318,20 @@ def load_shawky(data_dir: Path) -> pd.DataFrame:
 
         df["title"] = ""
         df["label"] = lbl
+        df["category"] = "Unknown"
         df["source_dataset"] = "shawkyelgendy"
         frames.append(df)
         print(f"[shawky] Loaded '{fname}': {len(df):,} rows (label={lbl})")
 
     if not frames:
-        return pd.DataFrame(columns=["title", "text", "label", "source_dataset"])
+        return pd.DataFrame(columns=["title", "text", "label", "category", "source_dataset"])
     return pd.concat(frames, ignore_index=True)
 
 
 # --- Main Loader ---
 
 """
-Load and combine all three fake-news datasets into one DataFrame.
+Download (if needed) and combine all three fake-news datasets into one DataFrame.
 
 Parameters:
 
@@ -348,6 +345,8 @@ drop_duplicates : bool
     Remove exact duplicate (text, label) pairs.  Default True.
 drop_na_text : bool
     Drop rows where 'text' is NaN or empty.  Default True.
+force_download : bool
+    Re-download datasets even if local CSVs already exist. Default False.
 
 Returns:
 
@@ -355,6 +354,7 @@ pd.DataFrame with columns:
     title          - article/tweet title ('' for tweet-only rows)
     text           - main text content
     label          - 0 = fake, 1 = real
+    category       - topic category ('Unknown' where unavailable)
     source_dataset - origin dataset name
 """
 def load_all_datasets(
@@ -362,14 +362,20 @@ def load_all_datasets(
     local_dir=None,
     drop_duplicates: bool = True,
     drop_na_text: bool = True,
+    force_download: bool = False
 ) -> pd.DataFrame:
     print("-" * 60)
-    print("  Fake News Dataset Ingestion")
+    print("Fake News Dataset Ingestion")
     print("-" * 60)
 
     data_dir = resolve_data_dir(mode, local_dir)
     print(f"\nData directory : {data_dir}")
     print(f"Sub-folders: {BHAVIK_DIR}/  {MAHDI_DIR}/  {SHAWKY_DIR}/\n")
+    
+    # Download from Kaggle if needed
+    print("Checking / downloading datasets from Kaggle ...")
+    download_datasets(data_dir, force=force_download)
+    print()
 
     print("Loading bhavikjikadara ...")
     df_bhavik = load_bhavik(data_dir)
@@ -382,7 +388,11 @@ def load_all_datasets(
 
     # Combine
     combined = pd.concat([df_bhavik, df_mahdi, df_shawky], ignore_index=True)
-    combined = combined[["title", "text", "label", "source_dataset"]]
+    combined = combined[["title", "text", "label", "category", "source_dataset"]]
+    
+    # Normalise category values
+    combined["category"] = combined["category"].fillna("Unknown").astype(str).str.strip()
+    combined.loc[combined["category"] == "", "category"] = "Unknown"
 
     # Basic cleaning
     if drop_na_text:
@@ -411,6 +421,9 @@ def load_all_datasets(
     print(f"\nRows per source:")
     for src, count in combined["source_dataset"].value_counts().items():
         print(f"{src:<22} {count:,}")
+    print(f"\nTop categories:")
+    for cat, count in combined["category"].value_counts().head(10).items():
+        print(f"  {cat:<22} {count:,}")
     print("-" * 60)
 
     return combined
@@ -441,9 +454,15 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=["drive", "local", "auto"], default="auto")
     parser.add_argument("--data-dir", default=None, help="Base directory for CSVs")
     parser.add_argument("--save", action="store_true", help="Save combined CSV")
+    parser.add_argument("--force-download", action="store_true",
+        help="Re-download datasets even if already present")
     args = parser.parse_args()
 
-    df = load_all_datasets(mode=args.mode, local_dir=args.data_dir)
+    df = load_all_datasets(
+        mode=args.mode, 
+        local_dir=args.data_dir,
+        force_download=args.force_download
+    )
     print("\nFirst 5 rows:")
     print(df.head(5).to_string())
 
