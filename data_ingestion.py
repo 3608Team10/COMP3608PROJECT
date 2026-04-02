@@ -64,9 +64,11 @@ df columns: title | text | label | source_dataset
 import os
 import warnings
 import zipfile
+import pandas as pd
+import kaggle
 from pathlib import Path
 from google.colab import userdata
-import pandas as pd
+from kaggle.api.kaggle_api_extended import KaggleApiExtended
 
 warnings.filterwarnings("ignore")
 
@@ -126,6 +128,58 @@ def setup_kaggle_credentials():
         "   b) Environment variables: KAGGLE_USERNAME and KAGGLE_KEY\n"
         "   c) ~/.kaggle/kaggle.json"
     )
+
+
+"""
+Download all three kaggle datasets into data_dir/<subfolder>/ using the Kaggle API.
+Skips a dataset if its subfolder is already populated
+
+Parameters:
+data_dir : Path
+    Root directory containing the three sub-folders
+force : bool
+    Re-download even if files already exist (default False)
+"""
+def download_datasets(data_dir: Path, force: bool = False):
+    setup_kaggle_credentials()
+    
+    try:
+        api = KaggleApiExtended()
+        api.authenticate()
+    except ImportError:
+        raise ImportError(
+            "The 'kaggle' package is not installed."
+            "Run: pip install kaggle"
+        )
+    
+    for subdir, slug in KAGGLE_DATASETS.items():
+        dest = data_dir / subdir
+        dest.mkdir(parents=True, exist_ok=True)
+        
+        # Skip if already populated and not forcing
+        existing_csvs = list(dest.glob("*.csv"))
+        if existing_csvs and not force:
+            print(f"[Kaggle] '{subdir}/' already contains {len(existing_csvs)} CSV(s) - skipping download.")
+            continue
+
+        print(f"[Kaggle] Downloading {slug} -> {dest} ...")
+        api.dataset_download_files(slug, path=str(dest), unzip=False, quiet=False)
+
+        # Unzip any downloaded zip archives, then remove them
+        for zip_path in dest.glob("*.zip"):
+            print(f"[Kaggle] Extracting {zip_path.name} ...")
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                # Extract only CSV files to keep the folder clean
+                for member in zf.namelist():
+                    if member.lower().endswith(".csv"):
+                        # Flatten - drop any sub-directory path inside the zip
+                        target = dest / Path(member).name
+                        with zf.open(member) as src, open(target, "wb") as dst:
+                            dst.write(src.read())
+            zip_path.unlink()
+            print(f"[kaggle] Removed {zip_path.name}")
+
+        print(f"[kaggle] Done: {subdir}/")
 
 
 # --- Helper Functions ---
