@@ -62,13 +62,14 @@ df columns: title | text | label | category | source_dataset
 
 
 import os
+import json
+import shutil
 import warnings
 import zipfile
 import pandas as pd
-import kaggle
+import kagglehub
 from pathlib import Path
 from google.colab import userdata
-from kaggle.api.kaggle_api_extended import KaggleApiExtended
 
 warnings.filterwarnings("ignore")
 
@@ -88,98 +89,6 @@ KAGGLE_DATASETS = {
     MAHDI_DIR: "mahdimashayekhi/fake-news-detection-dataset",
     SHAWKY_DIR: "shawkyelgendy/fake-news-football"
 }
-
-
-# --- Kaggle Authentication & Download ---
-
-"""
-Resolve Kaggle credentials in priority order:
-    1. Google Colab Secrets (KAGGLE_USERNAME / KAGGLE_KEY)
-    2. Environment variables (KAGGLE_USERNAME / KAGGLE_KEY)
-    3. kaggle.json file at ~/.kaggle/kaggle.json (kaggle library automatically detects this)
-    
-"""
-def setup_kaggle_credentials():
-    # Case: Already set in environment so do nothing
-    if os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY"):
-        return
-    
-    # Case: Google Colab secrets
-    try:
-        username = userdata.get("KAGGLE_USERNAME")
-        key = userdata.get("KAGGLE_KEY")
-        if username and key:
-            os.environ["KAGGLE_USERNAME"] = username
-            os.environ["KAGGLE_KEY"] = key
-            print("Kaggle credentials loaded from Colab secrets.")
-            return
-    except Exception:
-        pass
-    
-    # Case: kaggle.json file on disk (kaggle library handles this automatically)
-    kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
-    if kaggle_json.exists():
-        print("Kaggle credentials loaded from ~/.kaggle/kaggle.json.")
-        return
-    
-    raise EnvironmentError(
-        "Kaggle credentials not found. Provide them via:\n"
-        "   a) Google Colab Secrets: KAGGLE_USERNAME and KAGGLE_KEY\n"
-        "   b) Environment variables: KAGGLE_USERNAME and KAGGLE_KEY\n"
-        "   c) ~/.kaggle/kaggle.json"
-    )
-
-
-"""
-Download all three kaggle datasets into data_dir/<subfolder>/ using the Kaggle API.
-Skips a dataset if its subfolder is already populated
-
-Parameters:
-data_dir : Path
-    Root directory containing the three sub-folders
-force : bool
-    Re-download even if files already exist (default False)
-"""
-def download_datasets(data_dir: Path, force: bool = False):
-    setup_kaggle_credentials()
-    
-    try:
-        api = KaggleApiExtended()
-        api.authenticate()
-    except ImportError:
-        raise ImportError(
-            "The 'kaggle' package is not installed."
-            "Run: pip install kaggle"
-        )
-    
-    for subdir, slug in KAGGLE_DATASETS.items():
-        dest = data_dir / subdir
-        dest.mkdir(parents=True, exist_ok=True)
-        
-        # Skip if already populated and not forcing
-        existing_csvs = list(dest.glob("*.csv"))
-        if existing_csvs and not force:
-            print(f"[Kaggle] '{subdir}/' already contains {len(existing_csvs)} CSV(s) - skipping download.")
-            continue
-
-        print(f"[Kaggle] Downloading {slug} -> {dest} ...")
-        api.dataset_download_files(slug, path=str(dest), unzip=False, quiet=False)
-
-        # Unzip any downloaded zip archives, then remove them
-        for zip_path in dest.glob("*.zip"):
-            print(f"[Kaggle] Extracting {zip_path.name} ...")
-            with zipfile.ZipFile(zip_path, "r") as zf:
-                # Extract only CSV files to keep the folder clean
-                for member in zf.namelist():
-                    if member.lower().endswith(".csv"):
-                        # Flatten - drop any sub-directory path inside the zip
-                        target = dest / Path(member).name
-                        with zf.open(member) as src, open(target, "wb") as dst:
-                            dst.write(src.read())
-            zip_path.unlink()
-            print(f"[kaggle] Removed {zip_path.name}")
-
-        print(f"[kaggle] Done: {subdir}/")
 
 
 # --- Helper Functions ---
@@ -227,6 +136,134 @@ def find_file(directory: Path, filename: str) -> Path | None:
         if f.is_file() and f.name.lower() == filename.lower():
             return f
     return None
+
+
+# Write credentials to ~/.kaggle/kaggle.json so kagglehub picks them up
+def write_kaggle_json(data: dict):
+    kaggle_dir = Path.home() / ".kaggle"
+    kaggle_dir.mkdir(parents=True, exist_ok=True)
+    kaggle_json = kaggle_dir / "kaggle.json"
+    kaggle_json.write_text(json.dumps(data))
+    kaggle_json.chmod(0o600)
+
+
+def colab_secret(key: str):
+    try:
+        return userdata.get(key)
+    except Exception:
+        return None
+
+
+# --- Kaggle Authentication & Download ---
+
+"""
+Resolve Kaggle credentials in priority order:
+    1. Google Colab Secrets — KAGGLE_TOKEN (API token)
+    2. Google Colab Secrets — KAGGLE_USERNAME + KAGGLE_KEY (legacy) 
+    3. Environment variable — KAGGLE_TOKEN (full JSON string)
+    4. Environment variables — KAGGLE_USERNAME + KAGGLE_KEY (legacy)
+    5. ~/.kaggle/kaggle.json file (auto-detected by kagglehub)
+    
+"""
+def setup_kaggle_credentials():
+    # Case: Already set in environment so do nothing
+    if (Path.home() / ".kaggle" / "kaggle.json").exists():
+        return
+    
+    # Case 1 & 3: KAGGLE_TOKEN
+    token_json = colab_secret("KAGGLE_TOKEN") or os.environ.get("KAGGLE_TOKEN")
+    if token_json:
+        try:
+            token_data = json.loads(token_json)
+            write_kaggle_json(token_data)
+            print("Kaggle credentials written from KAGGLE_TOKEN.")
+            return
+        except json.JSONDecodeError:
+            pass # fall through to next option
+    
+    # Case 2 & 4: Legacy KAGGLE_USERNAME + KAGGLE_KEY
+    username = colab_secret("KAGGLE_USERNAME") or os.environ.get("KAGGLE_USERNAME")
+    key = colab_secret("KAGGLE_KEY") or os.environ.get("KAGGLE_KEY")
+    if username and key:
+        write_kaggle_json({"username": username, "key": key})
+        print("Kaggle credentials written from KAGGLE_USERNAME / KAGGLE_KEY.")
+        return
+    
+    # Case 5: Nothing found; kagglehub will raise a clear error on its own
+    raise EnvironmentError(
+        "Kaggle credentials not found. Provide them via one of:\n"
+        "   a) Colab Secret  : KAGGLE_TOKEN (paste the full JSON from kaggle.com/settings)\n"
+        "   b) Colab Secrets : KAGGLE_USERNAME + KAGGLE_KEY (legacy API key)\n"
+        "   c) Env variable  : KAGGLE_TOKEN\n"
+        "   d) Env variables : KAGGLE_USERNAME + KAGGLE_KEY\n"
+        "   e) File          : ~/.kaggle/kaggle.json\n\n"
+        "To get a new token: kaggle.com → Settings → API → Create New Token"
+    )
+
+
+"""
+Download all three kaggle datasets into data_dir/<subfolder>/.
+Uses kagglehub, which supports both new OAuth tokens and legacy API keys.
+Skips a dataset if its subfolder is already populated
+
+Parameters:
+data_dir : Path
+    Root directory containing the three sub-folders
+force : bool
+    Re-download even if files already exist (default False)
+"""
+def download_datasets(data_dir: Path, force: bool = False):
+    setup_kaggle_credentials()
+     
+    for subdir, slug in KAGGLE_DATASETS.items():
+        dest = data_dir / subdir
+        dest.mkdir(parents=True, exist_ok=True)
+        
+        # Skip if already populated and not forcing
+        existing_csvs = list(dest.glob("*.csv"))
+        if existing_csvs and not force:
+            print(f"[Kaggle] '{subdir}/' already contains {len(existing_csvs)} CSV(s) - skipping download.")
+            continue
+
+        print(f"[Kaggle] Downloading {slug} -> {dest} ...")
+        
+        # kagglehub downloads to its own cache and returns the local path
+        cached_path = kagglehub.dataset_download(slug)
+        cached_path = Path(cached_path)
+
+        # Copy / extract every CSV from the cached location into dest
+        collect_csvs(cached_path, dest)
+
+        print(f"[Kaggle] Done: {subdir}/")
+
+"""
+Recursively copy all .csv files from src into dest (flat — no sub-dirs).
+Also extracts .csv files from any .zip archives found.
+"""
+def collect_csvs(src: Path, dest: Path):
+    if src.is_file():
+        if src.suffix.lower() == ".csv":
+            shutil.copy2(src, dest / src.name)
+        elif src.suffix.lower() == ".zip":
+            extract_csvs_from_zip(src, dest)
+        return
+    
+    for item in src.rglob("*"):
+        if item.is_file():
+            if item.suffix.lower() == ".csv":
+                shutil.copy2(item, dest / item.name)
+            elif item.suffix.lower() == ".zip":
+                extract_csvs_from_zip(item, dest)
+
+
+def extract_csvs_from_zip(zip_path: Path, dest: Path):
+    print(f"[Kaggle] Extracting {zip_path.name} ...")
+    with zipfile.ZipFile(zip_path, "r") as zf:
+        for member in zf.namelist():
+            if member.lower().endswith(".csv"):
+                target = dest / Path(member).name
+                with zf.open(member) as src_f, open(target, "wb") as dst_f:
+                    dst_f.write(src_f.read())
 
 
 # --- Dataset Loaders ---
