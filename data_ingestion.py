@@ -419,17 +419,31 @@ def load_mahdi() -> pd.DataFrame:
 
 
 def load_shawky() -> pd.DataFrame:
-    # Set the path to the file you'd like to load
-    filepath = ""
+    try:
+        df_real = load_df(SHAWKY_DIR, "real.csv")
+        df_real = df_real.rename(columns={"tweet": "text"})
+        print(f"[shawky] Loaded 'real.csv': {len(df_real)} rows")
+    except Exception as e:
+        print(f"[shawky] WARNING: Could not load 'real.csv' - {e}")
+        df_real = pd.DataFrame(columns=["text"])
     
-    # Load the latest version
-    df = kagglehub.load_dataset(
-        KaggleDatasetAdapter.PANDAS,
-        SHAWKY_DIR,
-        filepath
-    )
+    try:
+        df_fake = load_df(SHAWKY_DIR, "fake.csv")
+        df_fake = df_fake.rename(columns={"tweet": "text"})
+        print(f"[shawky] Loaded 'fake.csv': {len(df_fake)} rows")
+    except Exception as e:
+        print(f"[shawky] WARNING: Could not load 'fake.csv' - {e}")
+        df_fake = pd.DataFrame(columns=["text"])
     
-    print(df.head())
+    df_real['label'] = 1
+    df_fake['label'] = 0
+    
+    df = pd.concat([df_real, df_fake], ignore_index=True)
+    
+    df['title'] = ""
+    df['category'] = "Sports"
+    df['dataset'] = 'shawkyelgendy'
+    
     return df
 
 
