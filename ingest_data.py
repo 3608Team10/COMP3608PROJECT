@@ -99,6 +99,7 @@ CATEGORY_MAP = {
     "US_News": "News",
     "worldnews": "News",
     "News": "News",
+    "Middle-East": "News"
 }
 
 
