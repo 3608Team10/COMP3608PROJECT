@@ -91,14 +91,14 @@ VALID_CATEGORIES = {
 }
 
 CATEGORY_MAP = {
-    "politicsnews": "Politics",
-    "politics": "Politics",
-    "left-news": "Politics",
-    "government news": "Politics",
-    "us_news": "News",
-    "worldnews": "News",
-    "news": "News",
-    "middle-east": "News"
+    "Politicsnews": "Politics",
+    "Politics": "Politics",
+    "Left-News": "Politics",
+    "Government News": "Politics",
+    "Us_News": "News",
+    "Worldnews": "News",
+    "News": "News",
+    "Middle-East": "News",
 }
 
 
@@ -108,9 +108,8 @@ def preprocess_normalise_category(df: pd.DataFrame) -> pd.DataFrame:
             .fillna("Unknown")
             .astype(str)
             .str.strip()
-            .str.lower()
-            .replace(CATEGORY_MAP)
             .str.title()
+            .replace(CATEGORY_MAP)
     )
     
     # Guard: Empty strings after title-casing become "Unknown"
