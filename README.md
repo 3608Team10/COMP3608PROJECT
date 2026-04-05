@@ -78,7 +78,7 @@ $C_1$: Ensemble Prediction Function
     - $f_1 \cdots f_M$ : represents base models
     - $g$ : meta-learner
 
-Ensemble Prediction Function $ F(x) $
+Ensemble Prediction Function $F(x)$
 
 $$
 F(x) = 
@@ -90,15 +90,19 @@ g(f_1(x), \cdots , f_M(x)) & \qquad \text{Stacking} \\
 $$
 
 $C_2$: Feature Mapping
+
 $$x_i = \phi (title_i, text_i, category_i, source\_dataset_i)$$
 
 $C_3$: Label Constraint
+
 $$y_i \in \{ 0, 1 \}$$
 
 $C_4$: Category Weight
+
 $$\alpha_{c_i} = \frac{1}{freq(c_i)}$$
 
 $C_5$: Class Weight
+
 $$w_1 = \frac{N}{2N_1}, \qquad w_0 = \frac{N}{2N_0}$$
 
 ## Colab Workflow (Developers)
