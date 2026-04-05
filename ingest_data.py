@@ -422,7 +422,7 @@ def load_mahdi() -> pd.DataFrame:
         return pd.DataFrame(columns=["title", "text", "label", "category", "dataset"])
     
     df['label'] = df['label'].map({'fake': 0, 'real': 1})
-    df = df.drop(columns=['data', 'source', 'author'])
+    df = df.drop(columns=['date', 'source', 'author'])
     df['dataset'] = 'mahdimashayekhi'
     
     return df
