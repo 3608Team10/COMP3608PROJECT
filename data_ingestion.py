@@ -135,6 +135,50 @@ SHAWKY_DIR = "shawkyelgendy/fake-news-football"
 #     return None
 
 
+def preprocess_drop_na_text(df: pd.DataFrame) -> pd.DataFrame:
+    before = len(df)
+    df = df[df["text"].notna() & (df["text"].str.strip() != "")]
+    dropped = before - len(df)
+    if dropped:
+        print(f"\nDropped {dropped:,} rows with empty/null text.")
+    return df
+
+
+def preprocess_drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
+    before = len(df)
+    df = df.drop_duplicates(subset=["text", "label"])
+    dropped = before - len(df)
+    if dropped:
+        print(f"Dropped {dropped:,} duplicate rows.")
+    return df
+
+
+def preprocess_normalise_category(df: pd.DataFrame) -> pd.DataFrame:
+    df["category"] = df["category"].fillna("Unknown").astype(str).str.strip()
+    df.loc[df["category"] == "", "category"] = "Unknown"
+    return df
+
+
+def summarize_datasets(df: pd.DataFrame):
+    print("\n" + "-" * 60)
+    print("Fake News Dataset Summary")
+    print("-" * 60)
+    
+    print(f"Total rows: {len(df):,}")
+    print(f"Fake (0): {(df['label'] == 0).sum():,}")
+    print(f"Real (1): {(df['label'] == 1).sum():,}")
+    
+    print(f"\nRows per source:")
+    for src, count in df["dataset"].value_counts().items():
+        print(f"{src:<22} {count:,}")
+    
+    print(f"\nTop categories:")
+    for cat, count in df["category"].value_counts().head(10).items():
+        print(f"  {cat:<22} {count:,}")
+    
+    print("-" * 60)
+
+
 # Write credentials to ~/.kaggle/kaggle.json so kagglehub picks them up
 def write_kaggle_json(data: dict):
     kaggle_dir = Path.home() / ".kaggle"
@@ -195,8 +239,8 @@ def setup_kaggle_credentials():
     # Case 5: Nothing found; kagglehub will raise a clear error on its own
     raise EnvironmentError(
         "Kaggle credentials not found. Provide them via one of:\n"
-        "   a) Colab Secret  : KAGGLE_API_TOKEN (new OAuth token from kaggle.com/settings)\n"
-        "   b) Colab Secrets : KAGGLE_USERNAME + KAGGLE_KEY (legacy API key)\n"
+        "   a) Colab Secret  : KAGGLE_API_TOKEN (API Token)\n"
+        "   b) Colab Secrets : KAGGLE_USERNAME + KAGGLE_KEY (Legacy API Credentials)\n"
         "   c) Env variable  : KAGGLE_API_TOKEN\n"
         "   d) Env variables : KAGGLE_USERNAME + KAGGLE_KEY\n"
         "   e) File          : ~/.kaggle/kaggle.json\n\n"
@@ -546,6 +590,37 @@ pd.DataFrame with columns:
 #     print("-" * 60)
 
 #     return combined
+
+
+def load_datasets() -> pd.DataFrame:
+    print("-" * 60)
+    print("Fake News Dataset Ingestion")
+    print("-" * 60)
+    
+    print("\nLoading bhavikjikadara ...")
+    df_bhavik = load_bhavik()
+    
+    print("\nLoading mahdimashayekhi ...")
+    df_mahdi = load_mahdi()
+    
+    print("\nLoading shawkyelgendy ...")
+    df_shawky = load_shawky()
+    
+    # Combine
+    combined = pd.concat([df_bhavik, df_mahdi, df_shawky], ignore_index=True)
+    combined = combined[["title", "text", "label", "category", "dataset"]]
+    
+    # Basic Preprocessing
+    combined = preprocess_normalise_category(combined)
+    combined = preprocess_drop_na_text(combined)
+    combined = preprocess_drop_duplicates(combined)
+    
+    # Summary
+    summarize_datasets(combined)
+    
+    return combined
+    
+
 
 
 # --- Data Persistence ---
