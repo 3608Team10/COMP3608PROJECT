@@ -53,7 +53,7 @@ $C_1$: Ensemble Prediction Function
 
     Model:
 
-    $$ F(x) = \frac{1}{M} \displaystyle\sum_{m=1}^{M} f_m(x) $$
+    $$F(x) = \frac{1}{M} \displaystyle\sum_{m=1}^{M} f_m(x)$$
 
     Where:
     - Each $f_m$ is trained on a bootstrap sample
@@ -62,17 +62,17 @@ $C_1$: Ensemble Prediction Function
 
     Model:
     
-    $$ F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x) $$
+    $$F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x)$$
 
     Where:
-    - $ \beta_{m} > 0 $
-    - $ \beta_{m} $ represents weight of weak learner
+    - $\beta_{m} > 0$
+    - $\beta_{m}$ represents weight of weak learner
 
 3. Stacking (Meta-Learning):
 
     Model:
 
-    $$ F(x) = g(f_1(x), f_2(x), \cdots , f_M(x)) $$
+    $$F(x) = g(f_1(x), f_2(x), \cdots , f_M(x))$$
 
     Where:
     - $f_1 \cdots f_M$ : represents base models
@@ -90,16 +90,16 @@ g(f_1(x), \cdots , f_M(x)) & \qquad \text{Stacking} \\
 $$
 
 $C_2$: Feature Mapping
-$$ x_i = \phi (title_i, text_i, category_i, source\_dataset_i) $$
+$$x_i = \phi (title_i, text_i, category_i, source\_dataset_i)$$
 
 $C_3$: Label Constraint
-$$ y_i \in \{ 0, 1 \} $$
+$$y_i \in \{ 0, 1 \}$$
 
 $C_4$: Category Weight
-$$ \alpha_{c_i} = \frac{1}{freq(c_i)} $$
+$$\alpha_{c_i} = \frac{1}{freq(c_i)}$$
 
 $C_5$: Class Weight
-$$ w_1 = \frac{N}{2N_1}, \qquad w_0 = \frac{N}{2N_0} $$
+$$w_1 = \frac{N}{2N_1}, \qquad w_0 = \frac{N}{2N_0}$$
 
 ## Colab Workflow (Developers)
 
