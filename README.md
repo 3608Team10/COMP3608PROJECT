@@ -53,36 +53,30 @@ $C_1$: Ensemble Prediction Function
 
     Model:
 
-    $$ 
-    F(x) = \frac{1}{M} \displaystyle\sum_{m=1}^{M} f_m(x)
-    $$
+    $$ F(x) = \frac{1}{M} \displaystyle\sum_{m=1}^{M} f_m(x) $$
 
     Where:
-    - $ \text{Each } f_m \text{ is trained on a bootstrap sample} $
+    - Each $f_m$ is trained on a bootstrap sample
 
 2. Boosting (Gradient Boosting):
 
     Model:
     
-    $$ 
-    F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x)
-    $$
+    $$ F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x) $$
 
     Where:
     - $ \beta_{m} > 0 $
-    - $ \beta_{m} \text{ represents weight of weak learner} $
+    - $ \beta_{m} $ represents weight of weak learner
 
 3. Stacking (Meta-Learning):
 
     Model:
 
-    $$ 
-    F(x) = g(f_1(x), f_2(x), \cdots , f_M(x))
-    $$
+    $$ F(x) = g(f_1(x), f_2(x), \cdots , f_M(x)) $$
 
     Where:
-    - $ f_1 \cdots f_M \text{ : represents base models} $
-    - $ g \text{ : meta-learner} $
+    - $f_1 \cdots f_M$ : represents base models
+    - $g$ : meta-learner
 
 Ensemble Prediction Function $ F(x) $
 
