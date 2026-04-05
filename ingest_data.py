@@ -85,9 +85,43 @@ def preprocess_drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+VALID_CATEGORIES = {
+    "Sports", "Politics", "News", "Health", "Entertainment", 
+    "Technology", "Business", "Science", "Unknown"
+}
+
+CATEGORY_MAP = {
+    "politicsNews": "Politics",
+    "politics": "Politics",
+    "Poilitics": "Politics",
+    "left-news": "Politics",
+    "Government News": "Politics",
+    "US_News": "News",
+    "worldnews": "News",
+    "News": "News",
+}
+
+
 def preprocess_normalise_category(df: pd.DataFrame) -> pd.DataFrame:
-    df["category"] = df["category"].fillna("Unknown").astype(str).str.strip()
+    df["category"] = (
+        df["category"]
+            .fillna("Unknown")
+            .astype(str)
+            .str.strip()
+            .replace(CATEGORY_MAP)
+            .str.title()
+    )
+    
+    # Guard: Empty strings after title-casing become "Unknown"
     df.loc[df["category"] == "", "category"] = "Unknown"
+    
+    # Raise if any unexpected categories remain (should be none after mapping)
+    unexpected = set(df["category"].unique()) - VALID_CATEGORIES
+    if unexpected:
+        raise ValueError(
+            f"Unexpected categories found after normalization: {sorted(unexpected)}"
+        )
+    
     return df
 
 
@@ -104,15 +138,11 @@ def summarize_datasets(df: pd.DataFrame):
     for src, count in df["dataset"].value_counts().items():
         print(f"{src:<22} {count:,}")
     
-    print(f"\nTop categories:")
-    for cat, count in df["category"].value_counts().head(10).items():
+    print(f"\nCategories:")
+    for cat, count in df["category"].value_counts().items():
         print(f"  {cat:<22} {count:,}")
     
     print("-" * 60)
-    
-    print(f"\nAll categories:")
-    for cat, count in df["category"].value_counts().items():
-        print(f"  {cat:<22} {count:,}")
 
 
 # Write credentials to ~/.kaggle/kaggle.json so kagglehub picks them up
