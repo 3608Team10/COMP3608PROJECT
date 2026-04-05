@@ -6,7 +6,7 @@
 
 - Google Drive Account
 - Kaggle Account
-- data_ingestion.py (Download data_ingestion.py and upload to your Google Colab environment)
+- ingest_data.py (Download python script and upload to your Google Colab environment)
 
 ### Colab Notebooks
 
@@ -24,17 +24,93 @@ Stacking
 
 ### Colab Secrets
 
-Before you can start working in the notebooks above you need to get your kaggle api key. <br>
-The data ingestion script supports Kaggle API Tokens and Kaggle Legacy Keys. <br>
+Before you can start working in the notebooks above you need to get your Kaggle API Key. <br>
+The data ingestion script supports Kaggle API Tokens and Kaggle Legacy API Credentials. <br>
 Place the actual values in the value field. <br>
 
-For the new api token:
+API Tokens (Recommended):
 
 <img src="images/colab-secrets-kaggle-token.png" alt="Colab Secrets - Kaggle (Token)" height="350" width="500"/> <br>
 
-For the legacy api key:
+Legacy API Credentials:
 
-<img src="images/colab-secrets-kaggle-legacy.png" alt="Colab Secrets - Kaggle (Key)" height="350" width="500"/> <br>
+<img src="images/colab-secrets-kaggle-legacy.png" alt="Colab Secrets - Kaggle (Legacy)" height="350" width="500"/> <br>
+
+### Colab Files
+
+Download the ingest_data.py script from the github repository. <br>
+Drag and drop the script or right-click in the file window and click upload to add the script to your session. <br>
+
+<img src="images/colab-files-script-upload.png" alt="Colab Files - Script Upload" height="350" width="350"/> <br>
+
+## Optimization Problem
+
+MIN
+
+$$
+Z = - \frac{1}{N} \displaystyle\sum_{i=1}^{N} \alpha_{c_i} [w_1 y_i log(F(x_i)) + w_0 (1 - y_i)
+log(1 - F(x_i))] + \lambda \Omega (\Theta)
+$$
+
+SUBJECT TO
+
+$C_1$: Ensemble Prediction Function
+
+1. Bagging (Bootstrap Aggregating):
+
+    Model:
+
+    $$F(x) = \frac{1}{M} \displaystyle\sum_{m=1}^{M} f_m(x)$$
+
+    Where:
+    - Each $f_m$ is trained on a bootstrap sample
+
+2. Boosting (Gradient Boosting):
+
+    Model:
+    
+    $$F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x)$$
+
+    Where:
+    - $\beta_{m} > 0$
+    - $\beta_{m}$ represents weight of weak learner
+
+3. Stacking (Meta-Learning):
+
+    Model:
+
+    $$F(x) = g(f_1(x), f_2(x), \cdots , f_M(x))$$
+
+    Where:
+    - $f_1 \cdots f_M$ : represents base models
+    - $g$ : meta-learner
+
+Ensemble Prediction Function $F(x)$
+
+$$
+F(x) = 
+\begin{cases} 
+\frac{1}{M} \sum f_m(x) & \qquad \text{Bagging} \\
+\sum \beta_{m} f_m(x) &  \qquad \text{Boosting} \\
+g(f_1(x), \cdots , f_M(x)) & \qquad \text{Stacking} \\
+\end{cases}
+$$
+
+$C_2$: Feature Mapping
+
+$$x_i = \phi (title_i, text_i, category_i, dataset_i)$$
+
+$C_3$: Label Constraint
+
+$$y_i \in \{ 0, 1 \}$$
+
+$C_4$: Category Weight
+
+$$\alpha_{c_i} = \frac{1}{freq(c_i)}$$
+
+$C_5$: Class Weight
+
+$$w_1 = \frac{N}{2N_1}, \qquad w_0 = \frac{N}{2N_0}$$
 
 ## Colab Workflow (Developers)
 
