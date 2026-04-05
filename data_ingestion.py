@@ -47,7 +47,7 @@ Kaggle API key setup:
 3. kaggle.json file at ~/.kaggle/kaggle.json
 
 
-df columns: title | text | label | category | source_dataset
+df columns: title | text | label | category | dataset
 """
 
 
@@ -310,8 +310,19 @@ def load_df(dir: str, path: str) -> pd.DataFrame:
 
 
 def load_bhavik() -> pd.DataFrame:
-    df_true = load_df(BHAVIK_DIR, "true.csv")
-    df_fake = load_df(BHAVIK_DIR, "fake.csv")
+    try:
+        df_true = load_df(BHAVIK_DIR, "true.csv")
+        print(f"[bhavik] Loaded 'true.csv': {len(df_true)} rows")
+    except Exception as e:
+        print(f"[bhavik] WARNING: Could not load 'true.csv' - {e}")
+        df_true = pd.DataFrame(columns=["title", "text", "category"])
+    
+    try:
+        df_fake = load_df(BHAVIK_DIR, "fake.csv")
+        print(f"[bhavik] Loaded 'fake.csv': {len(df_fake)} rows")
+    except Exception as e:
+        print(f"[bhavik] WARNING: Could not load 'fake.csv' - {e}")
+        df_fake = pd.DataFrame(columns=["title", "text", "category"])
     
     df_true['label'] = 1
     df_fake['label'] = 0
@@ -320,9 +331,8 @@ def load_bhavik() -> pd.DataFrame:
     
     df = df.drop(columns=['date'])
     df = df.rename(columns={'subject': 'category'})
-    df['source_dataset'] = 'bhavikjikadara'
-    
-    print(df.head())
+    df['dataset'] = 'bhavikjikadara'
+
     return df
 
 
@@ -360,9 +370,17 @@ def load_bhavik() -> pd.DataFrame:
 
 
 def load_mahdi() -> pd.DataFrame:
-    df = load_df(MAHDI_DIR, "fake_news_dataset.csv")
+    try:
+        df = load_df(MAHDI_DIR, "fake_news_dataset.csv")
+        print(f"[mahdi] Loaded 'fake_news_dataset.csv': {len(df)} rows")
+    except Exception as e:
+        print(f"[mahdi] WARNING: Could not load 'fake_news_dataset.csv' - {e}")
+        return pd.DataFrame(columns=["title", "text", "label", "category", "dataset"])
     
-    print(df.head())
+    df['label'] = df['label'].map({'fake': 0, 'real': 1})
+    df = df.drop(columns=['data', 'source', 'author'])
+    df['dataset'] = 'mahdimashayekhi'
+    
     return df
 
 

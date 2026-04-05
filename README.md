@@ -91,7 +91,7 @@ $$
 
 $C_2$: Feature Mapping
 
-$$x_i = \phi (title_i, text_i, category_i, source\_dataset_i)$$
+$$x_i = \phi (title_i, text_i, category_i, dataset_i)$$
 
 $C_3$: Label Constraint
 
