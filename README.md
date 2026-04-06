@@ -181,6 +181,14 @@ Now use colab secrets (key icon) and add the following (place the actual values 
 
 ### Configuring your github credentials to local environment
 
+Now change your directory to the local repository folder
+
+```py
+%cd /content/drive/MyDrive/project/COMP3608PROJECT
+```
+
+Configure your credentials
+
 ```py
 from google.colab import userdata
 
@@ -196,12 +204,6 @@ TOKEN = userdata.get('TOKEN')
 ```
 
 ### Git Commands
-
-Now change your directory to the local repository folder
-
-```py
-%cd /content/drive/MyDrive/project/COMP3608PROJECT
-```
 
 Create a new branch from an origin branch and switch your working directory to that branch
 
