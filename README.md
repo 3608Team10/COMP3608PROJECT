@@ -201,10 +201,11 @@ TOKEN = userdata.get('TOKEN')
 
 ### Git Commands
 
-Create a new branch and switch your working directory to that branch
+Create a new branch from an origin branch and switch your working directory to that branch
 
 ```py
-!git switch -c <branch-name>
+!git switch -c <new-branch-name> origin/<remote-branch>
+# !git switch -c <new-branch-name> origin/main
 ```
 
 Switch to an existing branch
