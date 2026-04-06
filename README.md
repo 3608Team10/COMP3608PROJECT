@@ -120,9 +120,9 @@ $$w_1 = \frac{N}{2N_1}, \qquad w_0 = \frac{N}{2N_0}$$
 
 1. In your Google Drive create a folder, 'project', to store your repository
 2. In your project folder create a Google colaboratory, e.g. Commands.ipynb, to store your git commands.
-3. Follow the commands in the section below to clone your repository and manage your git commands
+3. Open your commands notebook and follow the sections below to manage your git commands and clone your repository.
 
-### Clone Repository
+### Mount Google Drive
 
 Check your current directory
 
@@ -149,16 +149,12 @@ Change directory to your project folder
 %cd /content/drive/MyDrive/project
 ```
 
-Clone the repository
+### Clone Repository
+
+Clone the repository (for first time setup or when necessary)
 
 ```py
 !git clone https://github.com/3608Team10/COMP3608PROJECT.git
-```
-
-Now change your directory to the local repository folder
-
-```py
-%cd /content/drive/MyDrive/project/COMP3608PROJECT
 ```
 
 ### Github Token
@@ -183,7 +179,7 @@ Now use colab secrets (key icon) and add the following (place the actual values 
 
 <img src="images/colab-secrets-github.png" alt="Colab Secrets - Github" height="350" width="350"/> <br>
 
-Configuring your github credentials to local environment
+### Configuring your github credentials to local environment
 
 ```py
 from google.colab import userdata
@@ -200,6 +196,12 @@ TOKEN = userdata.get('TOKEN')
 ```
 
 ### Git Commands
+
+Now change your directory to the local repository folder
+
+```py
+%cd /content/drive/MyDrive/project/COMP3608PROJECT
+```
 
 Create a new branch from an origin branch and switch your working directory to that branch
 
