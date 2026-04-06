@@ -152,7 +152,7 @@ Change directory to your project folder
 Clone the repository
 
 ```py
-!git clone https://github.com/3608Team10/COMP3608PROJECT
+!git clone https://github.com/3608Team10/COMP3608PROJECT.git
 ```
 
 Now change your directory to the local repository folder
@@ -183,6 +183,8 @@ Now use colab secrets (key icon) and add the following (place the actual values 
 
 <img src="images/colab-secrets-github.png" alt="Colab Secrets - Github" height="350" width="350"/> <br>
 
+Configuring your github credentials to local environment
+
 ```py
 from google.colab import userdata
 
@@ -190,6 +192,11 @@ USER = userdata.get('USER')
 TOKEN = userdata.get('TOKEN')
 
 !git remote set-url origin https://{USER}:{TOKEN}@github.com/3608Team10/COMP3608PROJECT.git
+```
+
+```py
+!git config --global user.email "Your GitHub email"
+!git config --global user.name "Your GitHub Username"
 ```
 
 ### Git Commands
