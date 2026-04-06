@@ -216,7 +216,7 @@ Switch to an existing branch
 !git switch <branch-name>
 ```
 
-From this point you can open and edit other colab notebooks in the project then come back to the commands notebook to push/pull changes. 
+From this point you can open and edit other colab notebooks in the project then come back to the commands notebook to push/pull changes. Follow the Colab Secrets guide in the How to Run section to upload your Kaggle API Token. 
 
 Source Control Command
 
