@@ -102,7 +102,7 @@ $$x_i = \phi (title_i, text_i, category_i, dataset_i)$$
 
 $C_3$: Label Constraint
 
-$$y_i \in \{ 0, 1 \}$$
+$$y_i \in \\\{0, 1\\\}$$
 
 $C_4$: Category Weight
 
