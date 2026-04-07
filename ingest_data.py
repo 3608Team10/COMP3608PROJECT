@@ -48,6 +48,12 @@ import kagglehub
 from kagglehub import KaggleDatasetAdapter
 from google.colab import userdata # type: ignore
 from pathlib import Path
+import re
+import nltk
+from nltk.corpus import stopwords
+
+nltk.download('stopwords', quiet-True)
+STOP_WORDS = set(stopwords.words('english'))
 
 warnings.filterwarnings("ignore")
 
@@ -124,6 +130,30 @@ def preprocess_normalise_category(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
+def preprocess_clean_text(df: pd.DataFrame) -> pd.DataFrame:
+    def clea(text):
+        if pd.isna(text):
+            return ""
+        text = text.lower()
+        text = re.sub(r'http\S+|www\S+', '', text)
+        text = re.sub(r'[^a-z\s]', '', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+        df["ttile"] = df["title"].apply(clean)
+        df["text"] = df["text"].apply(clean)
+        return df
+    
+def preprocess_concat_text(df: pd.DataFrame) -> pd.DataFrame:
+    df["combined_text"] = df["title"].fillna('') + " " + df["text"].fillna('')
+    return df
+
+def preprocess_remove_stopwords(df: pd.DataFrame) -> pd.DataFrame:
+    def remove(text):
+        return " ".join([w for w in text.split() if w not in STOP_WORDS])
+
+    df["combined_text"] = df["combined_text"].apply(remove)
+    return df
 
 def summarize_datasets(df: pd.DataFrame):
     print("\n" + "-" * 60)
