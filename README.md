@@ -6,7 +6,6 @@
 
 - Google Drive Account
 - Kaggle Account
-- ingest_data.py (Download python script and upload to your Google Colab environment)
 
 ### Colab Notebooks
 
@@ -38,10 +37,14 @@ Legacy API Credentials:
 
 ### Colab Files
 
-Download the ingest_data.py script from the github repository. <br>
-Drag and drop the script or right-click in the file window and click upload to add the script to your session. <br>
+The notebooks are configured to download the ingest_data script from github. <br>
+Your colab session files should look like this: <br>
 
 <img src="images/colab-files-script-upload.png" alt="Colab Files - Script Upload" height="350" width="350"/> <br>
+
+If there was an error downloading the script, download the ingest_data.py script from the github repository. <br>
+Drag and drop the script or right-click in the file window and click upload to add the script to your session. <br>
+
 
 ## Optimization Problem
 
