@@ -2,10 +2,6 @@
 
 ## How to Run
 
-### Prerequisites
-
-- Google Drive Account
-
 ### Colab Notebooks
 
 Bagging
@@ -22,17 +18,20 @@ Stacking
 
 ### Colab Runtime
 
-placeholder
+The notebooks leverage NVIDIA RAPIDS for GPU-acceleration. Some dependencies require a GPU runtime to be selected. \
+Select the best GPU runtime available to you.
+
+<img src="images/colab-runtime.png" alt="Colab Runtime Type" height="350" width="350" />
 
 ### Colab Files
 
-The notebooks are configured to download the ingest_data script from github. <br>
-Your colab session files should look like this: <br>
+The notebooks are configured to download the ingest_data script from github. \
+Your colab session files should look like this:
 
-<img src="images/colab-files-script-upload.png" alt="Colab Files - Script Upload" height="350" width="350"/> <br>
+<img src="images/colab-files.png" alt="Colab Files Script Upload" height="350" width="375" />
 
-If there was an error downloading the script, download the ingest_data.py script from the github repository. <br>
-Drag and drop the script or right-click in the file window and click upload to add the script to your session. <br>
+If there was an error downloading the script, download the ingest_data.py script from the github repository. \
+Drag and drop the script or right-click in the file window and click upload to add the script to your session.
 
 ## Optimization Problem
 
@@ -168,7 +167,7 @@ Before we have the ability to push to github you need to create a token
 
 Now use colab secrets (key icon) and add the following (place the actual values in the value column):
 
-<img src="images/colab-secrets-github.png" alt="Colab Secrets - Github" height="350" width="350"/> <br>
+<img src="images/colab-secrets.png" alt="Colab Secrets - Github" height="350" width="350" />
 
 ### Configuring your github credentials to local environment
 
