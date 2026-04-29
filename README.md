@@ -2,49 +2,36 @@
 
 ## How to Run
 
-### Prerequisites
-
-- Google Drive Account
-- Kaggle Account
-
 ### Colab Notebooks
 
-Bagging 
+Bagging
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/3608Team10/COMP3608PROJECT/blob/main/Bagging.ipynb)
 
-Boosting 
+Boosting
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/3608Team10/COMP3608PROJECT/blob/main/Boosting.ipynb)
 
-Stacking 
+Stacking
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/3608Team10/COMP3608PROJECT/blob/main/Stacking.ipynb)
 
-### Colab Secrets
+### Colab Runtime
 
-Before you can start working in the notebooks above you need to get your Kaggle API Key. <br>
-The data ingestion script supports Kaggle API Tokens and Kaggle Legacy API Credentials. <br>
-Place the actual values in the value field. <br>
+The notebooks leverage NVIDIA RAPIDS for GPU-acceleration. Some dependencies require a GPU runtime to be selected. \
+Select the best GPU runtime available to you.
 
-API Tokens (Recommended):
-
-<img src="images/colab-secrets-kaggle-token.png" alt="Colab Secrets - Kaggle (Token)" height="350" width="500"/> <br>
-
-Legacy API Credentials:
-
-<img src="images/colab-secrets-kaggle-legacy.png" alt="Colab Secrets - Kaggle (Legacy)" height="350" width="500"/> <br>
+<img src="images/colab-runtime.png" alt="Colab Runtime Type" height="350" width="350" />
 
 ### Colab Files
 
-The notebooks are configured to download the ingest_data script from github. <br>
-Your colab session files should look like this: <br>
+The notebooks are configured to download the ingest_data script from github. \
+Your colab session files should look like this:
 
-<img src="images/colab-files-script-upload.png" alt="Colab Files - Script Upload" height="350" width="350"/> <br>
+<img src="images/colab-files.png" alt="Colab Files Script Upload" height="350" width="375" />
 
-If there was an error downloading the script, download the ingest_data.py script from the github repository. <br>
-Drag and drop the script or right-click in the file window and click upload to add the script to your session. <br>
-
+If there was an error downloading the script, download the ingest_data.py script from the github repository. \
+Drag and drop the script or right-click in the file window and click upload to add the script to your session.
 
 ## Optimization Problem
 
@@ -71,7 +58,7 @@ $C_1$: Ensemble Prediction Function
 2. Boosting (Gradient Boosting):
 
     Model:
-    
+
     $$F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x)$$
 
     Where:
@@ -91,8 +78,8 @@ $C_1$: Ensemble Prediction Function
 Ensemble Prediction Function $F(x)$
 
 $$
-F(x) = 
-\begin{cases} 
+F(x) =
+\begin{cases}
 \frac{1}{M} \sum f_m(x) & \qquad \text{Bagging} \\
 \sum \beta_{m} f_m(x) &  \qquad \text{Boosting} \\
 g(f_1(x), \cdots , f_M(x)) & \qquad \text{Stacking} \\
@@ -169,7 +156,7 @@ Before we have the ability to push to github you need to create a token
 3. Generate new token
     - Under Resource Owner changes this to '3608Team10'
     - Under Repository Access change this to 'All repositories'
-    - Add permissions 
+    - Add permissions
         - Tick Contents
         - Tick Workflows
     - Change Contents Access to 'Read and write'
@@ -180,7 +167,7 @@ Before we have the ability to push to github you need to create a token
 
 Now use colab secrets (key icon) and add the following (place the actual values in the value column):
 
-<img src="images/colab-secrets-github.png" alt="Colab Secrets - Github" height="350" width="350"/> <br>
+<img src="images/colab-secrets.png" alt="Colab Secrets - Github" height="350" width="350" />
 
 ### Configuring your github credentials to local environment
 
@@ -221,11 +208,11 @@ Switch to an existing branch
 !git switch <branch-name>
 ```
 
-From this point you can open and edit other colab notebooks in the project then come back to the commands notebook to push/pull changes. Follow the Colab Secrets guide in the How to Run section to upload your Kaggle API Token. 
+From this point you can open and edit other colab notebooks in the project then come back to the commands notebook to push/pull changes. Follow the Colab Secrets guide in the How to Run section to upload your Kaggle API Token.
 
 Source Control Command
 
-- The following command adds all files under the github repository directory with the . operator 
+- The following command adds all files under the github repository directory with the . operator
 - Adds a commit message
 
 ```py
@@ -241,7 +228,6 @@ Git push command
 
 Git pull command
 
-```
+```py
 !git pull origin <branch-name> 
 ```
-

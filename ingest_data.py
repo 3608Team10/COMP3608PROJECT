@@ -6,18 +6,25 @@ Combines 3 Kaggle datasets into a single unified DataFrame
 Datasets:
 1. bhavikjikadara
     - https://www.kaggle.com/datasets/bhavikjikadara/fake-news-detection
-    - fake.csv
-    - true.csv
+    - fake.csv | label=0
+    - true.csv | label=1
     - (title, text, subject, date)
+    - category is mapped from 'subject'
+    - 'date' is dropped
 2. mahdimashayekhi
     - https://www.kaggle.com/datasets/mahdimashayekhi/fake-news-detection-dataset
     - fake_news_dataset.csv
     - (title, text, date, source, author, category, label)
+    - label is mapped from 'fake'/'real' to 0/1
+    - 'date', 'source', 'author' are dropped
 3. shawkyelgendy
     - https://www.kaggle.com/datasets/shawkyelgendy/fake-news-football
-    - fake.csv
-    - real.csv
+    - fake.csv | label=0
+    - real.csv | label=1
     - (tweet)
+    - category is set to "Sports" for all rows
+    - 'text' is mapped from 'tweet'
+    - 'title' is set to ''
 
 
 Compatibility/Usage:
@@ -28,25 +35,14 @@ from ingest_data import load_datasets
 df = load_datasets()
 
 
-Kaggle API key setup:
-1. Google Colab Secrets: add KAGGLE_API_TOKEN as a secret
-1. Google Colab Secrets: add KAGGLE_USERNAME and KAGGLE_KEY as secrets
-3. Environment variable: set KAGGLE_API_TOKEN
-2. Environment variables: set KAGGLE_USERNAME and KAGGLE_KEY
-3. kaggle.json file at ~/.kaggle/kaggle.json
-
-
 df columns: title | text | label | category | dataset
 """
 
 
-import os
-import json
+import re
 import warnings
 import pandas as pd
-import kagglehub
-from kagglehub import KaggleDatasetAdapter
-from google.colab import userdata # type: ignore
+
 from pathlib import Path
 
 warnings.filterwarnings("ignore")
@@ -60,9 +56,13 @@ BHAVIK = "bhavikjikadara"
 MAHDI = "mahdimashayekhi"
 SHAWKY = "shawkyelgendy"
 
-BHAVIK_DIR = "bhavikjikadara/fake-news-detection"
-MAHDI_DIR = "mahdimashayekhi/fake-news-detection-dataset"
-SHAWKY_DIR = "shawkyelgendy/fake-news-football"
+GITHUB_BASE = "https://raw.githubusercontent.com/3608Team10/COMP3608PROJECT/refs/heads/main/data"
+
+BHAVIK_URL_FAKE = f"{GITHUB_BASE}/{BHAVIK}/fake.csv"
+BHAVIK_URL_TRUE = f"{GITHUB_BASE}/{BHAVIK}/true.csv"
+MAHDI_URL = f"{GITHUB_BASE}/{MAHDI}/fake_news_dataset.csv"
+SHAWKY_URL_FAKE = f"{GITHUB_BASE}/{SHAWKY}/fake.csv"
+SHAWKY_URL_TRUE = f"{GITHUB_BASE}/{SHAWKY}/real.csv"
 
 
 # --- Helper Functions ---
@@ -82,6 +82,20 @@ def preprocess_drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     dropped = before - len(df)
     if dropped:
         print(f"Dropped {dropped:,} duplicate rows.")
+    return df
+
+
+ACRONYM_RE = re.compile(r"\b(?:[A-Za-z]\.){2,}")
+
+def strip_dots(match: re.Match) -> str:
+    return match.group().replace(".", "")
+
+def preprocess_normalise_acronyms(df: pd.DataFrame) -> pd.DataFrame:
+    for col in ("title", "text"):
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.replace(
+                ACRONYM_RE, strip_dots, regex=True
+            )
     return df
 
 
@@ -145,84 +159,22 @@ def summarize_datasets(df: pd.DataFrame):
     print("-" * 60)
 
 
-# Write credentials to ~/.kaggle/kaggle.json so kagglehub picks them up
-def write_kaggle_json(data: dict):
-    kaggle_dir = Path.home() / ".kaggle"
-    kaggle_dir.mkdir(parents=True, exist_ok=True)
-    kaggle_json = kaggle_dir / "kaggle.json"
-    kaggle_json.write_text(json.dumps(data))
-    kaggle_json.chmod(0o600)
-
-
-def colab_secret(key: str):
-    try:
-        return userdata.get(key)
-    except Exception:
-        return None
-
-
-# --- Kaggle Authentication & Download ---
-
-"""
-Resolve Kaggle credentials in priority order:
-    1. Google Colab Secrets — KAGGLE_API_TOKEN (Token)
-    2. Google Colab Secrets — KAGGLE_USERNAME + KAGGLE_KEY (Legacy)
-    3. Environment variable — KAGGLE_API_TOKEN (Token)
-    4. Environment variables — KAGGLE_USERNAME + KAGGLE_KEY (Legacy)
-    5. ~/.kaggle/kaggle.json file (auto-detected by kagglehub)
-"""
-def setup_kaggle_credentials():
-    # Case: Already set in environment so do nothing
-    if (Path.home() / ".kaggle" / "kaggle.json").exists():
-        return
-    
-    # Case 1 & 3: KAGGLE_API_TOKEN
-    api_token = colab_secret("KAGGLE_API_TOKEN") or os.environ.get("KAGGLE_API_TOKEN")
-    if api_token:
-        os.environ["KAGGLE_API_TOKEN"] = api_token.strip()
-        print("Kaggle credentials set from KAGGLE_API_TOKEN (new OAuth token format).")
-        return
-    
-    # Case 2 & 4: Legacy KAGGLE_USERNAME + KAGGLE_KEY
-    username = colab_secret("KAGGLE_USERNAME") or os.environ.get("KAGGLE_USERNAME")
-    key = colab_secret("KAGGLE_KEY") or os.environ.get("KAGGLE_KEY")
-    if username and key:
-        write_kaggle_json({"username": username, "key": key})
-        print("Kaggle credentials written from KAGGLE_USERNAME / KAGGLE_KEY.")
-        return
-    
-    # Case 5: Nothing found; kagglehub will raise a clear error on its own
-    raise EnvironmentError(
-        "Kaggle credentials not found. Provide them via one of:\n"
-        "   a) Colab Secret  : KAGGLE_API_TOKEN (API Token)\n"
-        "   b) Colab Secrets : KAGGLE_USERNAME + KAGGLE_KEY (Legacy API Credentials)\n"
-        "   c) Env variable  : KAGGLE_API_TOKEN\n"
-        "   d) Env variables : KAGGLE_USERNAME + KAGGLE_KEY\n"
-        "   e) File          : ~/.kaggle/kaggle.json\n\n"
-        "To get a new token: kaggle.com → Settings → API → Create New Token"
-    )
-
-
 # --- Dataset Loaders ---
 
-def load_df(dir: str, path: str) -> pd.DataFrame:
-    return kagglehub.load_dataset(
-        KaggleDatasetAdapter.PANDAS,
-        dir,
-        path
-    )
+def load_df(url: str) -> pd.DataFrame:
+    return pd.read_csv(url)
 
 
 def load_bhavik() -> pd.DataFrame:
     try:
-        df_true = load_df(BHAVIK_DIR, "true.csv")
+        df_true = load_df(BHAVIK_URL_TRUE)
         print(f"[bhavik] Loaded 'true.csv': {len(df_true)} rows")
     except Exception as e:
         print(f"[bhavik] WARNING: Could not load 'true.csv' - {e}")
         df_true = pd.DataFrame(columns=["title", "text", "category"])
     
     try:
-        df_fake = load_df(BHAVIK_DIR, "fake.csv")
+        df_fake = load_df(BHAVIK_URL_FAKE)
         print(f"[bhavik] Loaded 'fake.csv': {len(df_fake)} rows")
     except Exception as e:
         print(f"[bhavik] WARNING: Could not load 'fake.csv' - {e}")
@@ -242,7 +194,7 @@ def load_bhavik() -> pd.DataFrame:
 
 def load_mahdi() -> pd.DataFrame:
     try:
-        df = load_df(MAHDI_DIR, "fake_news_dataset.csv")
+        df = load_df(MAHDI_URL)
         print(f"[mahdi] Loaded 'fake_news_dataset.csv': {len(df)} rows")
     except Exception as e:
         print(f"[mahdi] WARNING: Could not load 'fake_news_dataset.csv' - {e}")
@@ -257,7 +209,7 @@ def load_mahdi() -> pd.DataFrame:
 
 def load_shawky() -> pd.DataFrame:
     try:
-        df_real = load_df(SHAWKY_DIR, "real.csv")
+        df_real = load_df(SHAWKY_URL_TRUE)
         df_real = df_real.rename(columns={"tweet": "text"})
         print(f"[shawky] Loaded 'real.csv': {len(df_real)} rows")
     except Exception as e:
@@ -265,7 +217,7 @@ def load_shawky() -> pd.DataFrame:
         df_real = pd.DataFrame(columns=["text"])
     
     try:
-        df_fake = load_df(SHAWKY_DIR, "fake.csv")
+        df_fake = load_df(SHAWKY_URL_FAKE)
         df_fake = df_fake.rename(columns={"tweet": "text"})
         print(f"[shawky] Loaded 'fake.csv': {len(df_fake)} rows")
     except Exception as e:
@@ -286,8 +238,7 @@ def load_shawky() -> pd.DataFrame:
 
 # --- Main Loader ---
 
-"""
-Kagglehub handles downloads (if needed) 
+""" 
 Combines all three fake-news datasets into one DataFrame.
 
 Returns:
@@ -318,6 +269,7 @@ def load_datasets() -> pd.DataFrame:
     combined = combined[["title", "text", "label", "category", "dataset"]]
     
     # Basic Preprocessing
+    combined = preprocess_normalise_acronyms(combined)
     combined = preprocess_normalise_category(combined)
     combined = preprocess_drop_na_text(combined)
     combined = preprocess_drop_duplicates(combined)
