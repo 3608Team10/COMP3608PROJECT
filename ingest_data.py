@@ -39,6 +39,7 @@ df columns: title | text | label | category | dataset
 """
 
 
+import re
 import warnings
 import pandas as pd
 
@@ -81,6 +82,20 @@ def preprocess_drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     dropped = before - len(df)
     if dropped:
         print(f"Dropped {dropped:,} duplicate rows.")
+    return df
+
+
+ACRONYM_RE = re.compile(r"\b(?:[A-Za-z]\.){2,}")
+
+def strip_dots(match: re.Match) -> str:
+    return match.group().replace(".", "")
+
+def preprocess_normalise_acronyms(df: pd.DataFrame) -> pd.DataFrame:
+    for col in ("title", "text"):
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.replace(
+                ACRONYM_RE, strip_dots, regex=True
+            )
     return df
 
 
@@ -254,6 +269,7 @@ def load_datasets() -> pd.DataFrame:
     combined = combined[["title", "text", "label", "category", "dataset"]]
     
     # Basic Preprocessing
+    combined = preprocess_normalise_acronyms(combined)
     combined = preprocess_normalise_category(combined)
     combined = preprocess_drop_na_text(combined)
     combined = preprocess_drop_duplicates(combined)
