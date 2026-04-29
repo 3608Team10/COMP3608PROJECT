@@ -6,18 +6,25 @@ Combines 3 Kaggle datasets into a single unified DataFrame
 Datasets:
 1. bhavikjikadara
     - https://www.kaggle.com/datasets/bhavikjikadara/fake-news-detection
-    - fake.csv
-    - true.csv
+    - fake.csv | label=0
+    - true.csv | label=1
     - (title, text, subject, date)
+    - category is mapped from 'subject'
+    - 'date' is dropped
 2. mahdimashayekhi
     - https://www.kaggle.com/datasets/mahdimashayekhi/fake-news-detection-dataset
     - fake_news_dataset.csv
     - (title, text, date, source, author, category, label)
+    - label is mapped from 'fake'/'real' to 0/1
+    - 'date', 'source', 'author' are dropped
 3. shawkyelgendy
     - https://www.kaggle.com/datasets/shawkyelgendy/fake-news-football
-    - fake.csv
-    - real.csv
+    - fake.csv | label=0
+    - real.csv | label=1
     - (tweet)
+    - category is set to "Sports" for all rows
+    - 'text' is mapped from 'tweet'
+    - 'title' is set to ''
 
 
 Compatibility/Usage:
@@ -28,25 +35,13 @@ from ingest_data import load_datasets
 df = load_datasets()
 
 
-Kaggle API key setup:
-1. Google Colab Secrets: add KAGGLE_API_TOKEN as a secret
-1. Google Colab Secrets: add KAGGLE_USERNAME and KAGGLE_KEY as secrets
-3. Environment variable: set KAGGLE_API_TOKEN
-2. Environment variables: set KAGGLE_USERNAME and KAGGLE_KEY
-3. kaggle.json file at ~/.kaggle/kaggle.json
-
-
 df columns: title | text | label | category | dataset
 """
 
 
-import os
-import json
 import warnings
 import pandas as pd
-import kagglehub
-from kagglehub import KaggleDatasetAdapter
-from google.colab import userdata # type: ignore
+
 from pathlib import Path
 
 warnings.filterwarnings("ignore")
@@ -60,9 +55,13 @@ BHAVIK = "bhavikjikadara"
 MAHDI = "mahdimashayekhi"
 SHAWKY = "shawkyelgendy"
 
-BHAVIK_DIR = "bhavikjikadara/fake-news-detection"
-MAHDI_DIR = "mahdimashayekhi/fake-news-detection-dataset"
-SHAWKY_DIR = "shawkyelgendy/fake-news-football"
+GITHUB_BASE = "https://raw.githubusercontent.com/3608Team10/COMP3608PROJECT/refs/heads/main/data"
+
+BHAVIK_URL_FAKE = f"{GITHUB_BASE}/{BHAVIK}/fake.csv"
+BHAVIK_URL_TRUE = f"{GITHUB_BASE}/{BHAVIK}/true.csv"
+MAHDI_URL = f"{GITHUB_BASE}/{MAHDI}/fake_news_dataset.csv"
+SHAWKY_URL_FAKE = f"{GITHUB_BASE}/{SHAWKY}/fake.csv"
+SHAWKY_URL_TRUE = f"{GITHUB_BASE}/{SHAWKY}/real.csv"
 
 
 # --- Helper Functions ---
