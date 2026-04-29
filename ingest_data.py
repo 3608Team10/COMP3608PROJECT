@@ -144,64 +144,6 @@ def summarize_datasets(df: pd.DataFrame):
     print("-" * 60)
 
 
-# Write credentials to ~/.kaggle/kaggle.json so kagglehub picks them up
-def write_kaggle_json(data: dict):
-    kaggle_dir = Path.home() / ".kaggle"
-    kaggle_dir.mkdir(parents=True, exist_ok=True)
-    kaggle_json = kaggle_dir / "kaggle.json"
-    kaggle_json.write_text(json.dumps(data))
-    kaggle_json.chmod(0o600)
-
-
-def colab_secret(key: str):
-    try:
-        return userdata.get(key)
-    except Exception:
-        return None
-
-
-# --- Kaggle Authentication & Download ---
-
-"""
-Resolve Kaggle credentials in priority order:
-    1. Google Colab Secrets — KAGGLE_API_TOKEN (Token)
-    2. Google Colab Secrets — KAGGLE_USERNAME + KAGGLE_KEY (Legacy)
-    3. Environment variable — KAGGLE_API_TOKEN (Token)
-    4. Environment variables — KAGGLE_USERNAME + KAGGLE_KEY (Legacy)
-    5. ~/.kaggle/kaggle.json file (auto-detected by kagglehub)
-"""
-def setup_kaggle_credentials():
-    # Case: Already set in environment so do nothing
-    if (Path.home() / ".kaggle" / "kaggle.json").exists():
-        return
-    
-    # Case 1 & 3: KAGGLE_API_TOKEN
-    api_token = colab_secret("KAGGLE_API_TOKEN") or os.environ.get("KAGGLE_API_TOKEN")
-    if api_token:
-        os.environ["KAGGLE_API_TOKEN"] = api_token.strip()
-        print("Kaggle credentials set from KAGGLE_API_TOKEN (new OAuth token format).")
-        return
-    
-    # Case 2 & 4: Legacy KAGGLE_USERNAME + KAGGLE_KEY
-    username = colab_secret("KAGGLE_USERNAME") or os.environ.get("KAGGLE_USERNAME")
-    key = colab_secret("KAGGLE_KEY") or os.environ.get("KAGGLE_KEY")
-    if username and key:
-        write_kaggle_json({"username": username, "key": key})
-        print("Kaggle credentials written from KAGGLE_USERNAME / KAGGLE_KEY.")
-        return
-    
-    # Case 5: Nothing found; kagglehub will raise a clear error on its own
-    raise EnvironmentError(
-        "Kaggle credentials not found. Provide them via one of:\n"
-        "   a) Colab Secret  : KAGGLE_API_TOKEN (API Token)\n"
-        "   b) Colab Secrets : KAGGLE_USERNAME + KAGGLE_KEY (Legacy API Credentials)\n"
-        "   c) Env variable  : KAGGLE_API_TOKEN\n"
-        "   d) Env variables : KAGGLE_USERNAME + KAGGLE_KEY\n"
-        "   e) File          : ~/.kaggle/kaggle.json\n\n"
-        "To get a new token: kaggle.com → Settings → API → Create New Token"
-    )
-
-
 # --- Dataset Loaders ---
 
 def load_df(dir: str, path: str) -> pd.DataFrame:
