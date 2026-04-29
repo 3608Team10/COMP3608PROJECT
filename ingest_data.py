@@ -146,24 +146,20 @@ def summarize_datasets(df: pd.DataFrame):
 
 # --- Dataset Loaders ---
 
-def load_df(dir: str, path: str) -> pd.DataFrame:
-    return kagglehub.load_dataset(
-        KaggleDatasetAdapter.PANDAS,
-        dir,
-        path
-    )
+def load_df(url: str) -> pd.DataFrame:
+    return pd.read_csv(url)
 
 
 def load_bhavik() -> pd.DataFrame:
     try:
-        df_true = load_df(BHAVIK_DIR, "true.csv")
+        df_true = load_df(BHAVIK_URL_TRUE)
         print(f"[bhavik] Loaded 'true.csv': {len(df_true)} rows")
     except Exception as e:
         print(f"[bhavik] WARNING: Could not load 'true.csv' - {e}")
         df_true = pd.DataFrame(columns=["title", "text", "category"])
     
     try:
-        df_fake = load_df(BHAVIK_DIR, "fake.csv")
+        df_fake = load_df(BHAVIK_URL_FAKE)
         print(f"[bhavik] Loaded 'fake.csv': {len(df_fake)} rows")
     except Exception as e:
         print(f"[bhavik] WARNING: Could not load 'fake.csv' - {e}")
@@ -183,7 +179,7 @@ def load_bhavik() -> pd.DataFrame:
 
 def load_mahdi() -> pd.DataFrame:
     try:
-        df = load_df(MAHDI_DIR, "fake_news_dataset.csv")
+        df = load_df(MAHDI_URL)
         print(f"[mahdi] Loaded 'fake_news_dataset.csv': {len(df)} rows")
     except Exception as e:
         print(f"[mahdi] WARNING: Could not load 'fake_news_dataset.csv' - {e}")
@@ -198,7 +194,7 @@ def load_mahdi() -> pd.DataFrame:
 
 def load_shawky() -> pd.DataFrame:
     try:
-        df_real = load_df(SHAWKY_DIR, "real.csv")
+        df_real = load_df(SHAWKY_URL_TRUE)
         df_real = df_real.rename(columns={"tweet": "text"})
         print(f"[shawky] Loaded 'real.csv': {len(df_real)} rows")
     except Exception as e:
@@ -206,7 +202,7 @@ def load_shawky() -> pd.DataFrame:
         df_real = pd.DataFrame(columns=["text"])
     
     try:
-        df_fake = load_df(SHAWKY_DIR, "fake.csv")
+        df_fake = load_df(SHAWKY_URL_FAKE)
         df_fake = df_fake.rename(columns={"tweet": "text"})
         print(f"[shawky] Loaded 'fake.csv': {len(df_fake)} rows")
     except Exception as e:
@@ -227,8 +223,7 @@ def load_shawky() -> pd.DataFrame:
 
 # --- Main Loader ---
 
-"""
-Kagglehub handles downloads (if needed) 
+""" 
 Combines all three fake-news datasets into one DataFrame.
 
 Returns:
