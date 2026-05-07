@@ -25,65 +25,69 @@ Select the best GPU runtime available to you.
 
 ### Colab Files
 
-The notebooks are configured to download the ingest_data script from github. \
+The notebooks are configured to download the ingest_data script from github via the following command
+
+```py
+!wget https://raw.githubusercontent.com/3608Team10/COMP3608PROJECT/refs/heads/main/ingest_data.py
+```
+
 Your colab session files should look like this:
 
 <img src="images/colab-files.png" alt="Colab Files Script Upload" height="350" width="375" />
-
-If there was an error downloading the script, download the ingest_data.py script from the github repository. \
-Drag and drop the script or right-click in the file window and click upload to add the script to your session.
 
 ## Optimization Problem
 
 MIN
 
 $$
-Z = - \frac{1}{N} \displaystyle\sum_{i=1}^{N} \alpha_{c_i} [w_1 y_i log(F(x_i)) + w_0 (1 - y_i)
-log(1 - F(x_i))] + \lambda \Omega (\Theta)
+\min_{\theta_{1}, \dots, \theta_{M}, \theta_{g}} \quad Z = - \frac{1}{N} \sum_{i=1}^{N} \alpha_{c_i} [w_1 y_i \log(F(x_i)) + w_0 (1 - y_i) \log(1 - F(x_i))] + \sum_{m=1}^{M} \lambda_{m} \Omega(\theta_{m}) + \lambda_{g} \Omega(\theta_{g})
 $$
 
 SUBJECT TO
 
-$C_1$: Ensemble Prediction Function
-
-1. Bagging (Bootstrap Aggregating):
-
-    Model:
-
-    $$F(x) = \frac{1}{M} \displaystyle\sum_{m=1}^{M} f_m(x)$$
-
-    Where:
-    - Each $f_m$ is trained on a bootstrap sample
-
-2. Boosting (Gradient Boosting):
-
-    Model:
-
-    $$F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x)$$
-
-    Where:
-    - $\beta_{m} > 0$
-    - $\beta_{m}$ represents weight of weak learner
-
-3. Stacking (Meta-Learning):
-
-    Model:
-
-    $$F(x) = g(f_1(x), f_2(x), \cdots , f_M(x))$$
-
-    Where:
-    - $f_1 \cdots f_M$ : represents base models
-    - $g$ : meta-learner
-
-Ensemble Prediction Function $F(x)$
+$C_{1}^{bag}$: Ensemble Prediction Function
 
 $$
-F(x) =
-\begin{cases}
-\frac{1}{M} \sum f_m(x) & \qquad \text{Bagging} \\
-\sum \beta_{m} f_m(x) &  \qquad \text{Boosting} \\
-g(f_1(x), \cdots , f_M(x)) & \qquad \text{Stacking} \\
-\end{cases}
+F(x) = \frac{1}{M} \displaystyle\sum_{m=1}^{M} f_m(x)
+$$
+
+$$
+\text{where } f_m \text{ is trained on a bootstrap sample }
+B_m \subset \mathcal{D} \text{ with replacement}
+$$
+
+$C_{1}^{boost}$: Ensemble Prediction Function
+
+$$
+F(x) = \displaystyle\sum_{m=1}^{M} \beta_{m} f_m(x),
+\qquad
+\beta_{m} > 0,
+\quad
+\displaystyle\sum_{m=1}^{M} \beta_{m} \eta \leq 1
+$$
+
+$$
+\text{where } \eta \text{ is the learning rate shrinkage factor}
+$$
+
+$C_{1}^{stack}$: Ensemble Prediction Function
+
+$$C_{1}^{train}: \hat{p}_m^{(i)} = f_{m}^{(-k(i))}(x_i) \qquad \text{(OOF meta-features)}$$
+
+$$
+\text{where base model } f_m \text{ predicts on fold } k(i)
+\text{ using version trained on all other folds}
+$$
+
+$$
+C_{1}^{test}: F(x) = g(f_1(x), \ldots, f_M(x))
+\qquad \text{(full retrain inference)}
+$$
+
+$$
+\text{where base models } f_1, \dots, f_M
+\text{ are fully retrained on complete training set }
+\mathcal{D}
 $$
 
 $C_2$: Feature Mapping
@@ -92,15 +96,47 @@ $$x_i = \phi (title_i, text_i, category_i, dataset_i)$$
 
 $C_3$: Label Constraint
 
-$$y_i \in \\\{0, 1\\\}$$
+$$
+y_i \in \\\{0, 1\\\},
+\qquad
+0 = fake, \quad 1 = real
+$$
 
 $C_4$: Category Weight
 
-$$\alpha_{c_i} = \frac{1}{freq(c_i)}$$
+$$\alpha_{c_i} = \frac{N}{K \cdot freq(c_i)}$$
+
+$$
+\text{where } K \text{ is the number of distinct categories and }
+freq(c_i) = \frac{N_{c_i}}{N}
+\text{ is the proportion of samples in category } c_i
+$$
 
 $C_5$: Class Weight
 
 $$w_1 = \frac{N}{2N_1}, \qquad w_0 = \frac{N}{2N_0}$$
+
+$$
+\text{where } N_1 \text{ and } N_0 \text{ are the counts of real and fake samples respectively}
+$$
+
+$C_{6}^{stack}$: OOF Meta-Feature Matrix
+
+$$
+\mathbf{M} = \left[\hat{p}_1, \hat{p}_2, \dots, \hat{p}_M\right] \in
+\mathbb{R}^{N_{\text{train}} \times M}
+$$
+
+$C_{7}^{stack}$: Meta-Learner Sub-Objective
+
+$$
+\min_{\theta_g} \quad Z_g = - \frac{1}{N}\sum_{i=1}^{N} [w_1 y_i \log (g(m_i)) + w_0 (1 - y_i) \log (1 - g(m_i))] + \lambda_g \Omega(\theta_g)
+$$
+
+$$
+\text{where } m_i = [\hat{p}_1^{(i)}, \dots, \hat{p}_M^{(i)}]
+\text{ is the } i \text{-th row of } \mathbf{M}
+$$
 
 ## Colab Workflow (Developers)
 
