@@ -25,13 +25,15 @@ Select the best GPU runtime available to you.
 
 ### Colab Files
 
-The notebooks are configured to download the ingest_data script from github. \
+The notebooks are configured to download the ingest_data script from github via the following command
+
+```py
+!wget https://raw.githubusercontent.com/3608Team10/COMP3608PROJECT/refs/heads/main/ingest_data.py
+```
+
 Your colab session files should look like this:
 
 <img src="images/colab-files.png" alt="Colab Files Script Upload" height="350" width="375" />
-
-If there was an error downloading the script, download the ingest_data.py script from the github repository. \
-Drag and drop the script or right-click in the file window and click upload to add the script to your session.
 
 ## Optimization Problem
 
