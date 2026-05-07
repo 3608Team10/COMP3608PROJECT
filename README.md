@@ -40,11 +40,7 @@ Your colab session files should look like this:
 MIN
 
 $$
-\min_{\theta_{1}, \dots, \theta_{M}, \theta_{g}} \quad
-Z = - \frac{1}{N} \displaystyle\sum_{i=1}^{N}
-\alpha_{c_i} [w_1 y_i log(F(x_i)) + w_0 (1 - y_i)
-log(1 - F(x_i))] + \displaystyle\sum_{m=1}^{M} \lambda_{m} \Omega (\theta_{m})
-+ \lambda_{g} \Omega (\theta_{g})
+\min_{\theta_{1}, \dots, \theta_{M}, \theta_{g}} \quad Z = - \frac{1}{N} \sum_{i=1}^{N} \alpha_{c_i} [w_1 y_i \log(F(x_i)) + w_0 (1 - y_i) \log(1 - F(x_i))] + \sum_{m=1}^{M} \lambda_{m} \Omega(\theta_{m}) + \lambda_{g} \Omega(\theta_{g})
 $$
 
 SUBJECT TO
@@ -134,9 +130,7 @@ $$
 $C_{7}^{stack}$: Meta-Learner Sub-Objective
 
 $$
-\min_{\theta_g} \quad Z_g = - \frac{1}{N}\sum_{i=1}^{N}
-[w_1\, y_i \log g(m_i) + w_0 (1 - y_i) \log (1 - g(m_i))]
-+ \lambda_g \Omega(\theta_g)
+\min_{\theta_g} \quad Z_g = - \frac{1}{N}\sum_{i=1}^{N} [w_1 y_i \log (g(m_i)) + w_0 (1 - y_i) \log (1 - g(m_i))] + \lambda_g \Omega(\theta_g)
 $$
 
 $$
